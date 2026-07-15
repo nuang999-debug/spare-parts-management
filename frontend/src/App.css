@@ -1,0 +1,101 @@
+.app {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 0 1rem 2rem;
+}
+
+.app-header {
+  padding: 1rem 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.app-header a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.workflow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.workflow label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-weight: 600;
+}
+
+.workflow input {
+  font-size: 1.1rem;
+  padding: 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.workflow button {
+  font-size: 1rem;
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  border: 1px solid #1d4ed8;
+  background: white;
+  color: #1d4ed8;
+}
+
+.workflow button.primary {
+  background: #1d4ed8;
+  color: white;
+}
+
+.home-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.home-nav a {
+  display: block;
+  padding: 1rem;
+  text-align: center;
+  border-radius: 8px;
+  background: #1d4ed8;
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.lines-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.lines-table th,
+.lines-table td {
+  border-bottom: 1px solid #eee;
+  padding: 0.4rem;
+  text-align: left;
+}
+
+.line-done {
+  background: #e7f7e7;
+}
+
+.hint {
+  color: #666;
+  font-size: 0.85rem;
+}
+
+.error {
+  color: #b91c1c;
+}
+
+.status {
+  color: #15803d;
+}
+
+.scanner-error {
+  color: #b91c1c;
+}
