@@ -28,23 +28,29 @@
   font-weight: 600;
 }
 
-.workflow input {
+.workflow input,
+.workflow select {
   font-size: 1.1rem;
   padding: 0.6rem;
   border: 1px solid #ccc;
   border-radius: 6px;
 }
 
-.workflow button {
+.workflow button,
+.workflow a.button-link {
   font-size: 1rem;
   padding: 0.6rem 1rem;
   border-radius: 6px;
   border: 1px solid #1d4ed8;
   background: white;
   color: #1d4ed8;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
 }
 
-.workflow button.primary {
+.workflow button.primary,
+.workflow a.button-link.primary {
   background: #1d4ed8;
   color: white;
 }
@@ -77,10 +83,6 @@
   border-bottom: 1px solid #eee;
   padding: 0.4rem;
   text-align: left;
-}
-
-.line-done {
-  background: #e7f7e7;
 }
 
 .hint {

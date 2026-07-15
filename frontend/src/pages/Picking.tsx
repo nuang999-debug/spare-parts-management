@@ -1,15 +1,5 @@
-import { api } from '../api';
-import { DocumentWorkflow } from '../components/DocumentWorkflow';
+import { ScanSession } from '../components/ScanSession';
 
 export function Picking() {
-  return (
-    <DocumentWorkflow
-      title="Picking / Issue"
-      documentLabel="Sales Order No."
-      documentPlaceholder="e.g. SO001"
-      quantityLabel="Qty. Ordered"
-      fetchLines={api.getPickingLines}
-      submitLines={api.postPicking}
-    />
-  );
+  return <ScanSession workflow="picking" title="Picking / Issue" referenceLabel="SO Number / Note (optional)" />;
 }

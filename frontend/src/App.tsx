@@ -1,5 +1,6 @@
 import { Link, Route, Routes } from 'react-router-dom'
 import './App.css'
+import { Export } from './pages/Export'
 import { Home } from './pages/Home'
 import { Picking } from './pages/Picking'
 import { Receiving } from './pages/Receiving'
@@ -17,6 +18,7 @@ function App() {
           <Route path="/receiving" element={<Receiving />} />
           <Route path="/picking" element={<Picking />} />
           <Route path="/stockcount" element={<StockCount />} />
+          <Route path="/export" element={<Export />} />
         </Routes>
       </main>
     </div>

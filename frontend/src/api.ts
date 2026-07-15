@@ -1,4 +1,4 @@
-import type { DocumentLine, Item, ScanSubmission, StockCountLine } from './types';
+import type { ScanLine, Workflow } from './types';
 
 // VITE_API_BASE_URL is baked in at build time (e.g. the Render backend's URL).
 // Falls back to same-host port 4000 for local dev, where both run on one PC.
@@ -19,26 +19,18 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  lookupItem: (barcode: string) => request<Item>(`/item/${encodeURIComponent(barcode)}`),
-
-  getReceivingLines: (poNo: string) => request<DocumentLine[]>(`/receiving/${encodeURIComponent(poNo)}`),
-  postReceiving: (poNo: string, lines: ScanSubmission[]) =>
-    request<{ ok: true }>(`/receiving/${encodeURIComponent(poNo)}`, {
+  submitScan: (workflow: Workflow, reference: string, lines: ScanLine[]) =>
+    request<{ ok: true; count: number }>('/scans', {
       method: 'POST',
-      body: JSON.stringify({ lines }),
+      body: JSON.stringify({ workflow, reference: reference || undefined, lines }),
     }),
 
-  getPickingLines: (soNo: string) => request<DocumentLine[]>(`/picking/${encodeURIComponent(soNo)}`),
-  postPicking: (soNo: string, lines: ScanSubmission[]) =>
-    request<{ ok: true }>(`/picking/${encodeURIComponent(soNo)}`, {
-      method: 'POST',
-      body: JSON.stringify({ lines }),
-    }),
-
-  getStockCount: (location: string) => request<StockCountLine[]>(`/stockcount/${encodeURIComponent(location)}`),
-  postStockCount: (location: string, lines: ScanSubmission[]) =>
-    request<{ ok: true }>(`/stockcount/${encodeURIComponent(location)}`, {
-      method: 'POST',
-      body: JSON.stringify({ lines }),
-    }),
+  exportUrl: (workflow?: Workflow, from?: string, to?: string) => {
+    const params = new URLSearchParams();
+    if (workflow) params.set('workflow', workflow);
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    const query = params.toString();
+    return `${API_BASE}/export${query ? `?${query}` : ''}`;
+  },
 };

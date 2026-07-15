@@ -8,6 +8,7 @@ export function Home() {
         <Link to="/receiving">Receiving</Link>
         <Link to="/picking">Picking / Issue</Link>
         <Link to="/stockcount">Stock Count</Link>
+        <Link to="/export">Export</Link>
       </nav>
     </div>
   );

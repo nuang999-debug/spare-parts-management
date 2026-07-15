@@ -1,15 +1,5 @@
-import { api } from '../api';
-import { DocumentWorkflow } from '../components/DocumentWorkflow';
+import { ScanSession } from '../components/ScanSession';
 
 export function Receiving() {
-  return (
-    <DocumentWorkflow
-      title="Receiving"
-      documentLabel="Purchase Order No."
-      documentPlaceholder="e.g. PO001"
-      quantityLabel="Qty. Ordered"
-      fetchLines={api.getReceivingLines}
-      submitLines={api.postReceiving}
-    />
-  );
+  return <ScanSession workflow="receiving" title="Receiving" referenceLabel="PO Number / Note (optional)" />;
 }
