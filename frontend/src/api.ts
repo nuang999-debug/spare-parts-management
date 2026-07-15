@@ -1,9 +1,10 @@
 import type { DocumentLine, Item, ScanSubmission, StockCountLine } from './types';
 
-// Backend runs on the same PC, port 4000. Deriving the host from the current
-// page (rather than hardcoding localhost) means it also works when a phone
-// opens this app via the PC's warehouse-WiFi IP address.
-const API_BASE = `${window.location.protocol}//${window.location.hostname}:4000/api`;
+// VITE_API_BASE_URL is baked in at build time (e.g. the Render backend's URL).
+// Falls back to same-host port 4000 for local dev, where both run on one PC.
+const API_BASE = import.meta.env.VITE_API_BASE_URL
+  ? `${import.meta.env.VITE_API_BASE_URL}/api`
+  : `${window.location.protocol}//${window.location.hostname}:4000/api`;
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
