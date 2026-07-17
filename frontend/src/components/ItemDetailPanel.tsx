@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Area,
@@ -38,6 +39,7 @@ function fmt(n: number | null | undefined, digits = 1): string {
 }
 
 export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; onClose: () => void }) {
+  const [collapsed, setCollapsed] = useState(false);
   const { data: item, isLoading } = useQuery({
     queryKey: ["item", itemId],
     queryFn: () => getItem(itemId),
@@ -47,13 +49,28 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
     queryFn: () => getItemHistory(itemId),
   });
 
+  if (collapsed) {
+    return (
+      <aside className="detail-panel detail-panel-collapsed">
+        <button type="button" className="detail-panel-toggle" onClick={() => setCollapsed(false)} title="ขยาย">
+          ◀
+        </button>
+      </aside>
+    );
+  }
+
   return (
     <aside className="detail-panel">
       <div className="detail-panel-header">
         <h2>{item?.itemNoRaw ?? "..."}</h2>
-        <button type="button" onClick={onClose}>
-          Close
-        </button>
+        <div className="detail-panel-header-actions">
+          <button type="button" onClick={() => setCollapsed(true)} title="หุบ">
+            ▶
+          </button>
+          <button type="button" onClick={onClose}>
+            Close
+          </button>
+        </div>
       </div>
 
       {isLoading && <p>Loading...</p>}
