@@ -1,21 +1,17 @@
-export type Workflow = "receiving" | "picking" | "stockcount";
+import type { User } from "@prisma/client";
 
-export interface ScanLine {
-  barcode: string;
-  quantity: number;
+declare global {
+  namespace Express {
+    interface Request {
+      user?: User;
+    }
+  }
 }
 
-export interface ScanSubmission {
-  workflow: Workflow;
-  reference?: string;
-  lines: ScanLine[];
+declare module "express-session" {
+  interface SessionData {
+    userId?: number;
+  }
 }
 
-export interface ScanRecord {
-  id: number;
-  workflow: Workflow;
-  reference: string | null;
-  barcode: string;
-  quantity: number;
-  scanned_at: string;
-}
+export {};

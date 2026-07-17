@@ -1,0 +1,215 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum CalcStatus {
+  OK
+  WARN
+  DANGER
+}
+
+enum CalcTrend {
+  UP
+  DOWN
+  FLAT
+}
+
+enum ImportFileType {
+  ITEMS_RAW
+  PURCHASE_LINES
+}
+
+enum ImportStatus {
+  PREVIEW
+  COMMITTED
+  FAILED
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+model User {
+  id                 Int             @id @default(autoincrement())
+  username           String          @unique
+  passwordHash       String
+  displayName        String
+  role               Role            @default(USER)
+  isActive           Boolean         @default(true)
+  mustChangePassword Boolean         @default(false)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  loginHistory       LoginHistory[]
+  importBatches      ImportBatch[]
+  packingRules       PackingUnitRule[]
+  auditLogs          AuditLog[]
+
+  @@map("users")
+}
+
+model LoginHistory {
+  id                Int      @id @default(autoincrement())
+  userId            Int?
+  user              User?    @relation(fields: [userId], references: [id])
+  usernameAttempted String
+  success           Boolean
+  ipAddress         String?
+  userAgent         String?
+  createdAt         DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("login_history")
+}
+
+model Item {
+  id                Int        @id @default(autoincrement())
+  itemNoRaw         String
+  itemNoNormalized  String     @unique
+  description       String?
+  class             String?
+  category          String?
+  dimension         String?
+  purchasePrice     Float?
+  unitCost          Float?
+  vendor            String?
+
+  poQty             Float      @default(0)
+  stockQty          Float      @default(0)
+  backorderQty      Float      @default(0)
+  leadTimeDays      Float?
+
+  avgMonth          Float?
+  minUsage          Float?
+  maxUsage          Float?
+  oldMin            Float?
+  sumMin            Float?
+
+  next1             Float?
+  next2             Float?
+  next3             Float?
+  next4             Float?
+  next5             Float?
+
+  calcStatus        CalcStatus?
+  calcTrend         CalcTrend?
+  recommendedMin    Float?
+  suggestedOrderQty Float?
+  mustOrderByDate   DateTime?
+
+  prQtySuggested    Float?
+  prQtyCurrent      Float?
+  prIsOverride      Boolean    @default(false)
+
+  remark            String?
+  forModel          String?
+
+  lastImportedAt    DateTime?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  usageHistory      ItemUsageHistory[]
+  yearlySales       ItemYearlySales[]
+
+  @@map("items")
+}
+
+model ItemUsageHistory {
+  id          Int    @id @default(autoincrement())
+  itemId      Int
+  item        Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  monthIndex  Int    // 0 = M-12 (oldest) .. 12 = M-0 (current month)
+  periodLabel String // e.g. "M-12" .. "M-0", as labeled in the source file
+  qty         Float
+
+  @@unique([itemId, monthIndex])
+  @@map("item_usage_history")
+}
+
+model ItemYearlySales {
+  id     Int   @id @default(autoincrement())
+  itemId Int
+  item   Item  @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  year   Int
+  qty    Float
+
+  @@unique([itemId, year])
+  @@map("item_yearly_sales")
+}
+
+model PurchaseLine {
+  id                   Int           @id @default(autoincrement())
+  itemNoNormalized     String
+  quantity             Float
+  quantityReceived     Float
+  outstandingQty       Float
+  expectedReceiptDate  DateTime?
+  bucketMonth          Int?
+  importBatchId        Int
+  importBatch          ImportBatch   @relation(fields: [importBatchId], references: [id], onDelete: Cascade)
+  createdAt            DateTime      @default(now())
+
+  @@index([itemNoNormalized])
+  @@index([importBatchId])
+  @@map("purchase_lines")
+}
+
+model ImportBatch {
+  id           Int             @id @default(autoincrement())
+  fileName     String
+  fileType     ImportFileType
+  uploadedById Int
+  uploadedBy   User            @relation(fields: [uploadedById], references: [id])
+  uploadedAt   DateTime        @default(now())
+  rowCount     Int
+  status       ImportStatus
+  errorLog     Json?
+
+  purchaseLines PurchaseLine[]
+
+  @@map("import_batches")
+}
+
+model PackingUnitRule {
+  id               Int      @id @default(autoincrement())
+  itemNoNormalized String   @unique
+  multipleOf       Int
+  active           Boolean  @default(true)
+  createdById      Int
+  createdBy        User     @relation(fields: [createdById], references: [id])
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("packing_unit_rules")
+}
+
+model AuditLog {
+  id         Int         @id @default(autoincrement())
+  entityType String
+  entityId   String
+  fieldName  String
+  oldValue   String?
+  newValue   String?
+  action     AuditAction
+  changedById Int
+  changedBy  User        @relation(fields: [changedById], references: [id])
+  changedAt  DateTime    @default(now())
+  note       String?
+
+  @@index([entityType, entityId])
+  @@index([changedAt])
+  @@map("audit_log")
+}
