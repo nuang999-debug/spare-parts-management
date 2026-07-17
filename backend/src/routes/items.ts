@@ -21,6 +21,8 @@ const LIST_SELECT = {
   poQty: true,
   backorderQty: true,
   leadTimeDays: true,
+  avgMonth: true,
+  oldMin: true,
   sumMin: true,
   next1: true,
   next2: true,
@@ -35,6 +37,11 @@ const LIST_SELECT = {
   prQtyCurrent: true,
   prIsOverride: true,
   lastImportedAt: true,
+  usageHistory: {
+    where: { monthIndex: { gte: 7 } },
+    orderBy: { monthIndex: "asc" as const },
+    select: { monthIndex: true, periodLabel: true, qty: true },
+  },
 } as const;
 
 itemsRouter.get("/", async (_req, res, next) => {

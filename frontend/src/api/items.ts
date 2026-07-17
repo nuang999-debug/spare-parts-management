@@ -3,6 +3,12 @@ import { request } from "./client";
 export type CalcStatus = "OK" | "WARN" | "DANGER";
 export type CalcTrend = "UP" | "DOWN" | "FLAT";
 
+export interface ItemUsageHistoryRow {
+  monthIndex: number;
+  periodLabel: string;
+  qty: number;
+}
+
 export interface ItemListRow {
   id: number;
   itemNoRaw: string;
@@ -15,6 +21,8 @@ export interface ItemListRow {
   poQty: number;
   backorderQty: number;
   leadTimeDays: number | null;
+  avgMonth: number | null;
+  oldMin: number | null;
   sumMin: number | null;
   next1: number | null;
   next2: number | null;
@@ -29,12 +37,8 @@ export interface ItemListRow {
   prQtyCurrent: number | null;
   prIsOverride: boolean;
   lastImportedAt: string | null;
-}
-
-export interface ItemUsageHistoryRow {
-  monthIndex: number;
-  periodLabel: string;
-  qty: number;
+  /** Last 6 months only (monthIndex 7-12 / M-5..M-0), for the dense table's per-month columns. */
+  usageHistory: ItemUsageHistoryRow[];
 }
 
 export interface ItemYearlySalesRow {
@@ -42,17 +46,16 @@ export interface ItemYearlySalesRow {
   qty: number;
 }
 
-export interface ItemDetail extends ItemListRow {
+export interface ItemDetail extends Omit<ItemListRow, "usageHistory"> {
   dimension: string | null;
   purchasePrice: number | null;
   unitCost: number | null;
-  avgMonth: number | null;
   minUsage: number | null;
   maxUsage: number | null;
-  oldMin: number | null;
   recommendedMin: number | null;
   remark: string | null;
   forModel: string | null;
+  /** Full 13 months (M-12..M-0). */
   usageHistory: ItemUsageHistoryRow[];
   yearlySales: ItemYearlySalesRow[];
 }

@@ -340,7 +340,7 @@ select:focus {
 
 .items-table {
   width: 100%;
-  min-width: 1150px;
+  min-width: 2200px;
   table-layout: fixed;
   border-collapse: collapse;
 }
@@ -356,23 +356,50 @@ select:focus {
   font-weight: 600;
 }
 
-.items-table thead th {
+.items-table thead tr.lrow th {
   position: sticky;
   top: 0;
+  height: 30px;
   background: var(--surf);
-  z-index: 1;
-  font-size: 0.66rem;
+  z-index: 2;
+  font-size: 0.63rem;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   color: var(--text-muted);
   font-weight: 700;
+}
+
+.items-table thead tr.frow th {
+  position: sticky;
+  top: 30px;
+  height: 28px;
+  background: var(--card);
+  z-index: 2;
+  padding: 2px 4px;
+}
+
+.items-table thead tr.frow th input,
+.items-table thead tr.frow th select {
+  width: 100%;
+  min-width: 0;
+  padding: 2px 5px;
+  font-size: 0.68rem;
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  border-radius: 3px;
+  color: var(--text);
+  font-family: var(--font-sans);
+}
+
+.items-table thead tr.frow th select option {
+  background: var(--surf);
 }
 
 .items-table td,
 .items-table th {
   border-bottom: 1px solid var(--border);
-  padding: 0.4rem 0.65rem;
-  font-size: 0.78rem;
+  padding: 0.35rem 0.55rem;
+  font-size: 0.76rem;
   white-space: nowrap;
 }
 
