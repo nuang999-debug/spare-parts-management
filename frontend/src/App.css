@@ -134,6 +134,13 @@ body {
 
 .items-page {
   display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.items-content-row {
+  display: flex;
   flex: 1;
   min-height: 0;
   gap: 1rem;
@@ -160,6 +167,7 @@ body {
 
 .items-table-wrap {
   flex: 1;
+  min-width: 0;
   min-height: 0;
   display: flex;
   flex-direction: column;
@@ -174,7 +182,14 @@ body {
 
 .items-table {
   width: 100%;
+  min-width: 1150px;
+  table-layout: fixed;
   border-collapse: collapse;
+}
+
+.items-table td {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .items-table thead th {

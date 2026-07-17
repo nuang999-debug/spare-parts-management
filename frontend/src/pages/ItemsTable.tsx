@@ -17,28 +17,32 @@ import PrQtyCell from "../components/PrQtyCell";
 const columnHelper = createColumnHelper<ItemListRow>();
 
 const columns = [
-  columnHelper.accessor("itemNoRaw", { header: "Item No." }),
-  columnHelper.accessor("description", { header: "Description" }),
-  columnHelper.accessor("category", { header: "Category" }),
-  columnHelper.accessor("vendor", { header: "Vendor" }),
-  columnHelper.accessor("stockQty", { header: "Stock" }),
-  columnHelper.accessor("poQty", { header: "On order" }),
-  columnHelper.accessor("sumMin", { header: "Sum MIN" }),
+  columnHelper.accessor("itemNoRaw", { header: "Item No.", size: 130 }),
+  columnHelper.accessor("description", { header: "Description", size: 260 }),
+  columnHelper.accessor("category", { header: "Category", size: 90 }),
+  columnHelper.accessor("vendor", { header: "Vendor", size: 110 }),
+  columnHelper.accessor("stockQty", { header: "Stock", size: 70 }),
+  columnHelper.accessor("poQty", { header: "On order", size: 80 }),
+  columnHelper.accessor("sumMin", { header: "Sum MIN", size: 80 }),
   columnHelper.accessor("next1", {
     header: "Next-1",
+    size: 80,
     cell: (info) => info.getValue()?.toFixed(1) ?? "-",
   }),
   columnHelper.accessor("calcStatus", {
     header: "Status",
+    size: 80,
     cell: (info) => <StatusBadge status={info.getValue()} />,
   }),
   columnHelper.accessor("calcTrend", {
     header: "Trend",
+    size: 60,
     cell: (info) => <TrendIndicator trend={info.getValue()} />,
   }),
-  columnHelper.accessor("suggestedOrderQty", { header: "Suggested order" }),
+  columnHelper.accessor("suggestedOrderQty", { header: "Suggested order", size: 110 }),
   columnHelper.accessor("prQtyCurrent", {
     header: "PR qty",
+    size: 100,
     cell: (info) => <PrQtyCell item={info.row.original} />,
   }),
 ];
@@ -90,6 +94,13 @@ export default function ItemsTable() {
 
   if (isLoading) return <p>Loading items...</p>;
 
+  const virtualItems = rowVirtualizer.getVirtualItems();
+  const paddingTop = virtualItems.length ? virtualItems[0].start : 0;
+  const paddingBottom = virtualItems.length
+    ? rowVirtualizer.getTotalSize() - virtualItems[virtualItems.length - 1].end
+    : 0;
+  const leafColumns = table.getAllLeafColumns();
+
   return (
     <div className="items-page">
       <div className="items-toolbar">
@@ -111,9 +122,15 @@ export default function ItemsTable() {
         </span>
       </div>
 
+      <div className="items-content-row">
       <div className="items-table-wrap">
         <div className="items-table-scroll" ref={scrollRef}>
           <table className="items-table">
+            <colgroup>
+              {leafColumns.map((column) => (
+                <col key={column.id} style={{ width: column.getSize() }} />
+              ))}
+            </colgroup>
             <thead>
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
@@ -130,24 +147,18 @@ export default function ItemsTable() {
                 </tr>
               ))}
             </thead>
-            <tbody style={{ height: rowVirtualizer.getTotalSize(), position: "relative", display: "block" }}>
-              {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+            <tbody>
+              {paddingTop > 0 && (
+                <tr aria-hidden>
+                  <td style={{ height: paddingTop, padding: 0, border: "none" }} colSpan={leafColumns.length} />
+                </tr>
+              )}
+              {virtualItems.map((virtualRow) => {
                 const row = rows[virtualRow.index];
                 return (
                   <tr
                     key={row.id}
                     onClick={() => setSelectedItemId(row.original.id)}
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      transform: `translateY(${virtualRow.start}px)`,
-                      display: "table",
-                      tableLayout: "fixed",
-                      width: "100%",
-                      cursor: "pointer",
-                    }}
                     className={row.original.id === selectedItemId ? "row-selected" : ""}
                   >
                     {row.getVisibleCells().map((cell) => (
@@ -156,6 +167,11 @@ export default function ItemsTable() {
                   </tr>
                 );
               })}
+              {paddingBottom > 0 && (
+                <tr aria-hidden>
+                  <td style={{ height: paddingBottom, padding: 0, border: "none" }} colSpan={leafColumns.length} />
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -164,6 +180,7 @@ export default function ItemsTable() {
       {selectedItemId != null && (
         <ItemDetailPanel itemId={selectedItemId} onClose={() => setSelectedItemId(null)} />
       )}
+      </div>
     </div>
   );
 }
