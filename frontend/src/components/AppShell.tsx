@@ -1,5 +1,9 @@
-import { Link, Outlet, Navigate } from "react-router-dom";
+import { NavLink, Outlet, Navigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+
+function navClassName({ isActive }: { isActive: boolean }) {
+  return isActive ? "active" : undefined;
+}
 
 export default function AppShell() {
   const { user, logout } = useAuth();
@@ -13,14 +17,26 @@ export default function AppShell() {
       <header className="app-nav">
         <span className="app-nav-title">Spare Parts Management</span>
         <nav>
-          <Link to="/">Items</Link>
+          <NavLink to="/" end className={navClassName}>
+            Items
+          </NavLink>
           {user?.role === "ADMIN" && (
             <>
-              <Link to="/admin/import">Import</Link>
-              <Link to="/admin/packing-rules">Packing Rules</Link>
-              <Link to="/admin/users">Users</Link>
-              <Link to="/audit/login-history">Login History</Link>
-              <Link to="/audit/edit-history">Edit History</Link>
+              <NavLink to="/admin/import" className={navClassName}>
+                Import
+              </NavLink>
+              <NavLink to="/admin/packing-rules" className={navClassName}>
+                Packing Rules
+              </NavLink>
+              <NavLink to="/admin/users" className={navClassName}>
+                Users
+              </NavLink>
+              <NavLink to="/audit/login-history" className={navClassName}>
+                Login History
+              </NavLink>
+              <NavLink to="/audit/edit-history" className={navClassName}>
+                Edit History
+              </NavLink>
             </>
           )}
         </nav>
