@@ -69,7 +69,13 @@ itemsRouter.get("/:id", async (req, res, next) => {
       },
     });
     if (!item) throw new HttpError(404, "Item not found");
-    res.json(item);
+
+    const packingRule = await prisma.packingUnitRule.findUnique({
+      where: { itemNoNormalized: item.itemNoNormalized },
+      select: { multipleOf: true, active: true },
+    });
+
+    res.json({ ...item, packingRule: packingRule?.active ? packingRule : null });
   } catch (err) {
     next(err);
   }

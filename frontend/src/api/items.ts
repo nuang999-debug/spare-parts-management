@@ -58,6 +58,7 @@ export interface ItemDetail extends Omit<ItemListRow, "usageHistory"> {
   /** Full 13 months (M-12..M-0). */
   usageHistory: ItemUsageHistoryRow[];
   yearlySales: ItemYearlySalesRow[];
+  packingRule: { multipleOf: number; active: boolean } | null;
 }
 
 export interface ItemHistoryEntry {

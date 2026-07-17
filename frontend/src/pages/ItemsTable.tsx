@@ -18,6 +18,7 @@ import { StatusBadge, TrendIndicator } from "../components/StatusBadge";
 import ItemDetailPanel from "../components/ItemDetailPanel";
 import PrQtyCell from "../components/PrQtyCell";
 import { thaiMonthLabel } from "../lib/thaiMonths";
+import { nextCellTone } from "../lib/analysis";
 
 declare module "@tanstack/react-table" {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -55,7 +56,12 @@ const nextColumn = (n: 1 | 2 | 3 | 4 | 5, letter: string) =>
     size: 100,
     filterFn: gteFilter,
     meta: { filterType: "gte" },
-    cell: (info) => info.getValue()?.toFixed(1) ?? "-",
+    cell: (info) => {
+      const value = info.getValue();
+      if (value == null) return "-";
+      const tone = nextCellTone(value, info.row.original.sumMin);
+      return <span className={`tone-${tone}`}>{value.toFixed(1)}</span>;
+    },
   });
 
 const columns = [

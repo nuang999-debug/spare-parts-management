@@ -1,0 +1,145 @@
+import type { ItemDetail } from "../api/items";
+import { thaiMonthLabel } from "./thaiMonths";
+
+export function average(values: number[]): number {
+  return values.length ? values.reduce((s, v) => s + v, 0) / values.length : 0;
+}
+
+export function stdev(values: number[]): number {
+  if (!values.length) return 0;
+  const mean = average(values);
+  return Math.sqrt(average(values.map((v) => (v - mean) ** 2)));
+}
+
+export interface TriggerResult {
+  triggerMonth: number; // 1-5, or -1 if no trigger within the 5-month horizon
+  orderQty: number;
+}
+
+/** Mirrors backend computeSuggestedOrder — first forecast month that dips below Sum MIN. */
+export function findTrigger(next: number[], sumMin: number | null): TriggerResult {
+  if (sumMin && sumMin > 0) {
+    for (let i = 0; i < next.length; i++) {
+      if (next[i] < sumMin) {
+        return { triggerMonth: i + 1, orderQty: Math.max(0, Math.ceil(sumMin - next[i])) };
+      }
+    }
+  }
+  return { triggerMonth: -1, orderQty: 0 };
+}
+
+export type Urgency = "danger" | "warn" | "info" | "ok";
+
+export function urgencyLabel(triggerMonth: number): { label: string; tone: Urgency } {
+  if (triggerMonth === 1) return { label: "สั่งด่วน!", tone: "danger" };
+  if (triggerMonth === 2) return { label: "ควรสั่งเร็วๆ นี้", tone: "warn" };
+  if (triggerMonth >= 3) return { label: "วางแผนสั่ง", tone: "info" };
+  return { label: "ยังไม่จำเป็น", tone: "ok" };
+}
+
+/** % change of the newer half of a 6-month window vs the older half. */
+export function trendPercent(hist6: number[]): number {
+  const old3 = average(hist6.slice(0, 3));
+  const new3 = average(hist6.slice(3, 6));
+  if (old3 <= 0) return new3 > 0 ? 100 : 0;
+  return ((new3 - old3) / old3) * 100;
+}
+
+export function volatilityPercent(hist6: number[], avgMonth: number): number {
+  if (avgMonth <= 0) return 0;
+  return (stdev(hist6) / avgMonth) * 100;
+}
+
+export interface MonthExtreme {
+  value: number;
+  label: string;
+}
+
+/** hist6 offsets run -5..0 (oldest to newest, ending at the current month). */
+export function maxMonth(hist6: number[]): MonthExtreme {
+  const value = Math.max(...hist6);
+  const idx = hist6.indexOf(value);
+  return { value, label: thaiMonthLabel(idx - 5) };
+}
+
+export function minMonth(hist6: number[]): MonthExtreme {
+  const nonZero = hist6.filter((v) => v > 0);
+  const value = nonZero.length ? Math.min(...nonZero) : 0;
+  const idx = hist6.indexOf(value);
+  return { value, label: thaiMonthLabel(idx - 5) };
+}
+
+export function mustOrderByDays(triggerMonth: number, leadTimeDays: number | null): number {
+  if (triggerMonth < 1) return 0;
+  return Math.max(0, triggerMonth * 30 - (leadTimeDays ?? 0));
+}
+
+export function recommendedMinDiffPercent(recommendedMin: number | null, sumMin: number | null): number | null {
+  if (recommendedMin == null || sumMin == null || sumMin <= 0) return null;
+  return ((recommendedMin - sumMin) / sumMin) * 100;
+}
+
+export function safetyFactorFor(volatilityPct: number): number {
+  return volatilityPct > 50 ? 1.5 : volatilityPct > 30 ? 1.3 : 1.15;
+}
+
+export type CellTone = "ok" | "warn" | "danger";
+
+/** Mirrors backend ncls(): red below Sum MIN, amber within 15% above it, else green. */
+export function nextCellTone(value: number, sumMin: number | null): CellTone {
+  if (!sumMin || sumMin <= 0) return "ok";
+  if (value < sumMin) return "danger";
+  if (value < sumMin * 1.15) return "warn";
+  return "ok";
+}
+
+export interface ItemAnalysis {
+  hist6: number[];
+  next: number[];
+  triggerMonth: number;
+  orderQty: number;
+  urgency: { label: string; tone: Urgency };
+  triggerValue: number | null;
+  triggerMonthLabel: string;
+  triggerLetter: string;
+  trendPct: number;
+  volatilityPct: number;
+  nonZeroMonths: number;
+  max: MonthExtreme;
+  min: MonthExtreme;
+  daysToOrder: number;
+  estimatedValue: number;
+  allFiveBelowMin: boolean;
+  minDiffPct: number | null;
+}
+
+const NEXT_LETTERS = ["BH", "BI", "BJ", "BK", "BL"];
+
+export function analyzeItem(item: ItemDetail): ItemAnalysis {
+  const hist13 = item.usageHistory.map((h) => h.qty);
+  const hist6 = hist13.slice(7, 13);
+  const next = [item.next1, item.next2, item.next3, item.next4, item.next5].map((v) => v ?? 0);
+
+  const { triggerMonth, orderQty } = findTrigger(next, item.sumMin);
+  const triggerValue = triggerMonth > 0 ? next[triggerMonth - 1] : null;
+
+  return {
+    hist6,
+    next,
+    triggerMonth,
+    orderQty,
+    urgency: urgencyLabel(triggerMonth),
+    triggerValue,
+    triggerMonthLabel: triggerMonth > 0 ? thaiMonthLabel(triggerMonth) : "-",
+    triggerLetter: triggerMonth > 0 ? NEXT_LETTERS[triggerMonth - 1] : "-",
+    trendPct: trendPercent(hist6),
+    volatilityPct: volatilityPercent(hist6, item.avgMonth ?? 0),
+    nonZeroMonths: hist6.filter((v) => v > 0).length,
+    max: maxMonth(hist6),
+    min: minMonth(hist6),
+    daysToOrder: mustOrderByDays(triggerMonth, item.leadTimeDays),
+    estimatedValue: orderQty * (item.purchasePrice ?? 0),
+    allFiveBelowMin: item.sumMin != null && item.sumMin > 0 && next.every((v) => v < (item.sumMin ?? 0)),
+    minDiffPct: recommendedMinDiffPercent(item.recommendedMin, item.sumMin),
+  };
+}

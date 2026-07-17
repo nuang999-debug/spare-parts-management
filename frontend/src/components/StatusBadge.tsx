@@ -1,6 +1,6 @@
 import type { CalcStatus, CalcTrend } from "../api/items";
 
-const STATUS_LABEL: Record<CalcStatus, string> = { OK: "OK", WARN: "Warn", DANGER: "Danger" };
+const STATUS_LABEL: Record<CalcStatus, string> = { OK: "ปกติ", WARN: "ระวัง", DANGER: "วิกฤต" };
 const STATUS_CLASS: Record<CalcStatus, string> = {
   OK: "badge badge-ok",
   WARN: "badge badge-warn",
