@@ -15,6 +15,21 @@ import {
 import { getItem, getItemHistory } from "../api/items";
 import { StatusBadge, TrendIndicator } from "./StatusBadge";
 
+const CHART_MUTED = "#94a3b8";
+const CHART_GRID = "#263044";
+const CHART_ACCENT = "#00d4aa";
+const CHART_ACCENT2 = "#4f9eff";
+const CHART_ACCENT3 = "#a78bfa";
+const CHART_DANGER = "#ef4444";
+const TOOLTIP_STYLE = {
+  background: "#1a2233",
+  border: "1px solid #263044",
+  borderRadius: 6,
+  fontSize: 12,
+  color: "#e2e8f0",
+};
+const AXIS_TICK = { fontSize: 11, fill: CHART_MUTED };
+
 export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; onClose: () => void }) {
   const { data: item, isLoading } = useQuery({
     queryKey: ["item", itemId],
@@ -75,11 +90,11 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
             <h3>13-month usage history</h3>
             <ResponsiveContainer width="100%" height={180}>
               <BarChart data={item.usageHistory}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="periodLabel" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip />
-                <Bar dataKey="qty" fill="#2563eb" />
+                <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} />
+                <XAxis dataKey="periodLabel" tick={AXIS_TICK} />
+                <YAxis tick={AXIS_TICK} />
+                <Tooltip contentStyle={TOOLTIP_STYLE} />
+                <Bar dataKey="qty" fill={CHART_ACCENT2} />
               </BarChart>
             </ResponsiveContainer>
           </section>
@@ -93,14 +108,14 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
                   value: item[`next${m}` as "next1" | "next2" | "next3" | "next4" | "next5"],
                 }))}
               >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="value" name="Forecasted stock" stroke="#2563eb" />
+                <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} />
+                <XAxis dataKey="month" tick={AXIS_TICK} />
+                <YAxis tick={AXIS_TICK} />
+                <Tooltip contentStyle={TOOLTIP_STYLE} />
+                <Legend wrapperStyle={{ fontSize: 12, color: CHART_MUTED }} />
+                <Line type="monotone" dataKey="value" name="Forecasted stock" stroke={CHART_ACCENT} />
                 {item.sumMin != null && (
-                  <ReferenceLine y={item.sumMin} stroke="#dc2626" strokeDasharray="4 4" label="Sum MIN" />
+                  <ReferenceLine y={item.sumMin} stroke={CHART_DANGER} strokeDasharray="4 4" label="Sum MIN" />
                 )}
               </LineChart>
             </ResponsiveContainer>
@@ -110,11 +125,11 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
             <h3>Yearly sales</h3>
             <ResponsiveContainer width="100%" height={160}>
               <BarChart data={item.yearlySales}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="year" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip />
-                <Bar dataKey="qty" fill="#0891b2" />
+                <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} />
+                <XAxis dataKey="year" tick={AXIS_TICK} />
+                <YAxis tick={AXIS_TICK} />
+                <Tooltip contentStyle={TOOLTIP_STYLE} />
+                <Bar dataKey="qty" fill={CHART_ACCENT3} />
               </BarChart>
             </ResponsiveContainer>
           </section>
