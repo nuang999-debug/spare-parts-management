@@ -1,5 +1,6 @@
 import { NavLink, Outlet, Navigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { useTheme } from "../lib/useTheme";
 
 function navClassName({ isActive }: { isActive: boolean }) {
   return isActive ? "active" : undefined;
@@ -7,6 +8,7 @@ function navClassName({ isActive }: { isActive: boolean }) {
 
 export default function AppShell() {
   const { user, logout } = useAuth();
+  const [theme, toggleTheme] = useTheme();
 
   if (user?.mustChangePassword) {
     return <Navigate to="/change-password" replace />;
@@ -41,6 +43,9 @@ export default function AppShell() {
           )}
         </nav>
         <div className="app-nav-user">
+          <button type="button" className="theme-toggle" onClick={toggleTheme} title="สลับธีมสว่าง/มืด">
+            {theme === "dark" ? "🌙" : "☀️"} ธีม
+          </button>
           <span>{user?.displayName}</span>
           <button type="button" onClick={() => logout()}>
             Log out
