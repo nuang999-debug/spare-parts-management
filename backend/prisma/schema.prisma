@@ -93,6 +93,7 @@ model Item {
   leadTimeDays      Float?
 
   avgMonth          Float?
+  avgMonth6         Float?
   minUsage          Float?
   maxUsage          Float?
   oldMin            Float?

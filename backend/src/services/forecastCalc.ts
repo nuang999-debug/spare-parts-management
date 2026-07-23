@@ -46,7 +46,9 @@ export function computeStatus(next1: number, next2: number, sumMin: number | nul
 export function computeTrend(hist6: number[]): CalcTrend {
   const old3 = average(hist6.slice(0, 3));
   const new3 = average(hist6.slice(3, 6));
-  if (old3 <= 0) return new3 > 0 ? "UP" : "FLAT";
+  // Matches the original's `if(a===0)return 'flat'` exactly — a negative old3 still computes
+  // a real ratio below, it's only an exact-zero average that short-circuits to flat.
+  if (old3 === 0) return "FLAT";
   const pctChange = ((new3 - old3) / old3) * 100;
   if (pctChange > 8) return "UP";
   if (pctChange < -8) return "DOWN";
@@ -83,26 +85,18 @@ export function computeMustOrderByDate(
   return new Date(today.getTime() + mustOrderByDays * 86_400_000);
 }
 
-/** Advisory only — never overwrites the authoritative Sum MIN (sumMin). */
-export function computeRecommendedMin(
-  avgMonth: number,
-  leadTimeDays: number | null,
-  hist6: number[]
-): number {
-  if (avgMonth <= 0) return 0;
-  const volatility = (stdev(hist6) / avgMonth) * 100;
-  const safetyFactor = volatility > 50 ? 1.5 : volatility > 30 ? 1.3 : 1.15;
-  const leadTimeMonths = (leadTimeDays ?? 0) / 30;
-  return Math.ceil(avgMonth * leadTimeMonths * safetyFactor);
+/**
+ * New MIN.ST (BA) — advisory only, never overwrites the authoritative Sum MIN (sumMin).
+ * Mirrors the original's one-time import-time formula exactly: ba = leadTime ? avgMonth*(leadTime/30)*1.2 : 0.
+ * (The volatility-based 1.15/1.3/1.5 safety factor is a *different*, narrative-only suggestion
+ * computed fresh in the frontend deep-analysis text — it never overwrites this persisted field.)
+ */
+export function computeRecommendedMin(avgMonth: number, leadTimeDays: number | null): number {
+  if (!leadTimeDays) return 0;
+  const leadTimeMonths = leadTimeDays / 30;
+  return avgMonth * leadTimeMonths * 1.2;
 }
 
 function average(values: number[]): number {
   return values.length ? values.reduce((s, v) => s + v, 0) / values.length : 0;
-}
-
-function stdev(values: number[]): number {
-  if (!values.length) return 0;
-  const mean = average(values);
-  const variance = average(values.map((v) => (v - mean) ** 2));
-  return Math.sqrt(variance);
 }

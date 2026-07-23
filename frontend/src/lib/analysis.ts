@@ -41,13 +41,15 @@ export function urgencyLabel(triggerMonth: number): { label: string; tone: Urgen
 export function trendPercent(hist6: number[]): number {
   const old3 = average(hist6.slice(0, 3));
   const new3 = average(hist6.slice(3, 6));
-  if (old3 <= 0) return new3 > 0 ? 100 : 0;
-  return ((new3 - old3) / old3) * 100;
+  if (old3 > 0) return ((new3 - old3) / old3) * 100;
+  return new3 > 0 ? 100 : 0;
 }
 
+/** Deviation of each of the 6 months from AVG/M (the 12-month average) — NOT from hist6's own mean. */
 export function volatilityPercent(hist6: number[], avgMonth: number): number {
   if (avgMonth <= 0) return 0;
-  return (stdev(hist6) / avgMonth) * 100;
+  const variance = average(hist6.map((v) => (v - avgMonth) ** 2));
+  return (Math.sqrt(variance) / avgMonth) * 100;
 }
 
 export interface MonthExtreme {
@@ -55,18 +57,17 @@ export interface MonthExtreme {
   label: string;
 }
 
-/** hist6 offsets run -5..0 (oldest to newest, ending at the current month). */
+/** hist6 offsets run -6..-1 (oldest to newest), excluding the current/incomplete month. */
 export function maxMonth(hist6: number[]): MonthExtreme {
   const value = Math.max(...hist6);
   const idx = hist6.indexOf(value);
-  return { value, label: thaiMonthLabel(idx - 5) };
+  return { value, label: thaiMonthLabel(idx - 6) };
 }
 
 export function minMonth(hist6: number[]): MonthExtreme {
-  const nonZero = hist6.filter((v) => v > 0);
-  const value = nonZero.length ? Math.min(...nonZero) : 0;
+  const value = Math.min(...hist6);
   const idx = hist6.indexOf(value);
-  return { value, label: thaiMonthLabel(idx - 5) };
+  return { value, label: thaiMonthLabel(idx - 6) };
 }
 
 export function mustOrderByDays(triggerMonth: number, leadTimeDays: number | null): number {
@@ -74,13 +75,24 @@ export function mustOrderByDays(triggerMonth: number, leadTimeDays: number | nul
   return Math.max(0, triggerMonth * 30 - (leadTimeDays ?? 0));
 }
 
-export function recommendedMinDiffPercent(recommendedMin: number | null, sumMin: number | null): number | null {
-  if (recommendedMin == null || sumMin == null || sumMin <= 0) return null;
-  return ((recommendedMin - sumMin) / sumMin) * 100;
-}
-
 export function safetyFactorFor(volatilityPct: number): number {
   return volatilityPct > 50 ? 1.5 : volatilityPct > 30 ? 1.3 : 1.15;
+}
+
+/**
+ * Live, unsaved "what if this PR arrives" preview — does NOT touch the real Next-1..5 (those
+ * only ever move from a confirmed PO's Expected Receipt Date, matching standard MRP practice
+ * where a requisition isn't counted as a scheduled receipt). Since next[i] is a running total
+ * (stock + cumulative PO - cumulative avg), adding prQty at one bucket shifts every next[i]
+ * from that bucket onward by the same flat +prQty — no need to know the real PO breakdown.
+ */
+export function whatIfBucket(leadTimeDays: number | null): number {
+  return Math.min(5, Math.max(1, Math.ceil((leadTimeDays ?? 0) / 30)));
+}
+
+export function computeWhatIfNext(next: readonly number[], leadTimeDays: number | null, prQty: number): number[] {
+  const bucket = whatIfBucket(leadTimeDays);
+  return next.map((v, i) => (i + 1 >= bucket ? v + prQty : v));
 }
 
 export type CellTone = "ok" | "warn" | "danger";
@@ -109,15 +121,16 @@ export interface ItemAnalysis {
   min: MonthExtreme;
   daysToOrder: number;
   estimatedValue: number;
-  allFiveBelowMin: boolean;
-  minDiffPct: number | null;
+  /** How many of Next-1..5 fall below Sum MIN (0-5) — drives the 4-tier risk assessment. */
+  belowMinCount: number;
 }
 
 const NEXT_LETTERS = ["BH", "BI", "BJ", "BK", "BL"];
 
 export function analyzeItem(item: ItemDetail): ItemAnalysis {
   const hist13 = item.usageHistory.map((h) => h.qty);
-  const hist6 = hist13.slice(7, 13);
+  // The 6-month trend window (AO-AT) is M-6..M-1 — excludes the current/incomplete month M-0.
+  const hist6 = hist13.slice(6, 12);
   const next = [item.next1, item.next2, item.next3, item.next4, item.next5].map((v) => v ?? 0);
 
   const { triggerMonth, orderQty } = findTrigger(next, item.sumMin);
@@ -139,7 +152,7 @@ export function analyzeItem(item: ItemDetail): ItemAnalysis {
     min: minMonth(hist6),
     daysToOrder: mustOrderByDays(triggerMonth, item.leadTimeDays),
     estimatedValue: orderQty * (item.purchasePrice ?? 0),
-    allFiveBelowMin: item.sumMin != null && item.sumMin > 0 && next.every((v) => v < (item.sumMin ?? 0)),
-    minDiffPct: recommendedMinDiffPercent(item.recommendedMin, item.sumMin),
+    belowMinCount:
+      item.sumMin != null && item.sumMin > 0 ? next.filter((v) => v < (item.sumMin ?? 0)).length : 0,
   };
 }

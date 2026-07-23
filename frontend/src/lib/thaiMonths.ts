@@ -19,3 +19,8 @@ export function thaiMonthLabel(offsetFromNow: number): string {
   d.setMonth(d.getMonth() + offsetFromNow);
   return THAI_MONTHS[d.getMonth()];
 }
+
+/** "14 ต.ค." style short date, matching the original tool's must-order-by date format. */
+export function thaiDateShort(date: Date): string {
+  return `${date.getDate()} ${THAI_MONTHS[date.getMonth()]}`;
+}

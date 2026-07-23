@@ -38,16 +38,21 @@ function computeItemData(
   }
 ) {
   const hist13 = row.usageHistory.map((h) => h.qty);
-  const hist6 = hist13.slice(7, 13);
+  // The 6-month trend window (AO-AT in the original) is M-6..M-1 — it excludes the
+  // current/incomplete month M-0, same as computeAvgMonth's exclusion below.
+  const hist6 = hist13.slice(6, 12);
   const avgMonth = computeAvgMonth(hist13);
+  // Next-1..5 decrements by the 6-month rate (AO-AT), not the 12-month AVG/M —
+  // matches the original's bh0=be+bd-avg6, n20=bh0-avg6, ... exactly.
+  const avgMonth6 = hist6.reduce((s, v) => s + v, 0) / 6;
   const minUsage = computeMinUsage(hist13);
   const maxUsage = computeMaxUsage(hist13);
 
   const poBuckets = ctx.poBuckets.get(row.itemNoNormalized) ?? [row.poQty, 0, 0, 0, 0];
-  const next = computeNextForecast(row.stockQty, poBuckets, avgMonth);
+  const next = computeNextForecast(row.stockQty, poBuckets, avgMonth6);
   const calcStatus = computeStatus(next[0], next[1], row.sumMin);
   const calcTrend = computeTrend(hist6);
-  const recommendedMin = computeRecommendedMin(avgMonth, row.leadTimeDays, hist6);
+  const recommendedMin = computeRecommendedMin(avgMonth, row.leadTimeDays);
   const suggestion = computeSuggestedOrder(next, row.sumMin);
   const mustOrderByDate = computeMustOrderByDate(suggestion.triggerMonth, row.leadTimeDays, ctx.now);
   const prQtySuggested = applyPackingRule(suggestion.orderQty, ctx.packingRule);
@@ -55,7 +60,7 @@ function computeItemData(
   const prIsOverride = ctx.existingPr?.prIsOverride ?? false;
   const prQtyCurrent = prIsOverride
     ? applyPackingRule(ctx.existingPr!.prQtyCurrent ?? 0, ctx.packingRule)
-    : prQtySuggested;
+    : null;
 
   return {
     itemNoRaw: row.itemNoRaw,
@@ -72,6 +77,7 @@ function computeItemData(
     backorderQty: row.backorderQty,
     leadTimeDays: row.leadTimeDays,
     avgMonth,
+    avgMonth6,
     minUsage,
     maxUsage,
     oldMin: row.oldMin,

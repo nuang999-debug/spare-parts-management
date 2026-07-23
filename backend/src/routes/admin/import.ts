@@ -14,6 +14,21 @@ importRouter.use(requireAuth, requireRole("ADMIN"));
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } });
 
+/**
+ * The "current month" reference point for bucketing PO due-dates must be frozen to whenever
+ * the Items master was last imported — not the wall-clock moment the Purchase Lines file
+ * happens to get uploaded (which the original freezes as `_fcYear`/`_fcMonth` at Items-import
+ * time). Otherwise a PO import lagging the Items import by a few days near a month boundary
+ * could bucket a due-date one month off from what the Items snapshot's Next-1..5 assume.
+ */
+async function getForecastAnchorDate(): Promise<Date> {
+  const latestItemsBatch = await prisma.importBatch.findFirst({
+    where: { fileType: "ITEMS_RAW", status: "COMMITTED" },
+    orderBy: { uploadedAt: "desc" },
+  });
+  return latestItemsBatch?.uploadedAt ?? new Date();
+}
+
 importRouter.post("/items/preview", upload.single("file"), (req, res, next) => {
   try {
     if (!req.file) throw new HttpError(400, "No file uploaded");
@@ -48,10 +63,11 @@ importRouter.post("/items/commit", upload.single("file"), async (req, res, next)
   }
 });
 
-importRouter.post("/purchase-lines/preview", upload.single("file"), (req, res, next) => {
+importRouter.post("/purchase-lines/preview", upload.single("file"), async (req, res, next) => {
   try {
     if (!req.file) throw new HttpError(400, "No file uploaded");
-    const result = parsePurchaseLinesWorkbook(req.file.buffer);
+    const anchorDate = await getForecastAnchorDate();
+    const result = parsePurchaseLinesWorkbook(req.file.buffer, anchorDate);
     res.json({
       fileType: "PURCHASE_LINES",
       rowCount: result.rowCount,
@@ -67,7 +83,8 @@ importRouter.post("/purchase-lines/preview", upload.single("file"), (req, res, n
 importRouter.post("/purchase-lines/commit", upload.single("file"), async (req, res, next) => {
   try {
     if (!req.file) throw new HttpError(400, "No file uploaded");
-    const result = parsePurchaseLinesWorkbook(req.file.buffer);
+    const anchorDate = await getForecastAnchorDate();
+    const result = parsePurchaseLinesWorkbook(req.file.buffer, anchorDate);
     if (result.errors.length) {
       throw new HttpError(400, result.errors.join(" "));
     }

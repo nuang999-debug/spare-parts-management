@@ -62,7 +62,7 @@
 }
 
 :root[data-theme="light"] button[type="submit"],
-:root[data-theme="light"] .items-toolbar button,
+:root[data-theme="light"] .items-toolbar button:not([type="button"]),
 :root[data-theme="light"] form button:not([type="button"]) {
   color: #fff;
 }
@@ -121,7 +121,7 @@ button {
 }
 
 button[type="submit"],
-.items-toolbar button,
+.items-toolbar button:not([type="button"]),
 form button:not([type="button"]) {
   background: var(--accent);
   color: #000;
@@ -332,6 +332,262 @@ select:focus {
 
 /* ---------- items table page ---------- */
 
+.planning-page {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.tabs-bar {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.9rem;
+  flex-shrink: 0;
+}
+
+.tab-btn {
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 2px solid transparent !important;
+  border-radius: 0 !important;
+  padding: 0.55rem 0.9rem !important;
+  font-size: 0.82rem !important;
+  font-weight: 600 !important;
+  color: var(--text-muted2) !important;
+}
+
+.tab-btn:hover {
+  color: var(--text) !important;
+}
+
+.tab-btn.on {
+  color: var(--accent) !important;
+  border-bottom-color: var(--accent) !important;
+}
+
+.tab-content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.print-btn {
+  margin-left: auto;
+}
+
+@media print {
+  .app-nav,
+  .tabs-bar,
+  .detail-panel {
+    display: none !important;
+  }
+
+  .app-content,
+  .planning-page,
+  .tab-content,
+  .sum-page {
+    display: block !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  body,
+  .app-shell-layout {
+    height: auto !important;
+  }
+}
+
+/* ---------- summary tab ---------- */
+
+.sum-page {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-bottom: 1rem;
+}
+
+.sum-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.sum-kc {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1rem;
+}
+
+.sum-kl {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.3rem;
+}
+
+.sum-kv {
+  font-family: var(--font-mono);
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.sum-ks {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 0.2rem;
+}
+
+.sum-sec {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.sum-sec-hd {
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sum-sec-bd {
+  padding: 0.9rem 1rem;
+}
+
+.sum-export-btn {
+  padding: 0.35rem 0.7rem !important;
+  font-size: 0.72rem !important;
+  white-space: nowrap;
+}
+
+.sum-two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+.sum-three {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.6rem;
+}
+
+.mini-kc {
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.6rem;
+  text-align: center;
+}
+
+.donut-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.donut-legend {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+}
+
+.donut-total {
+  font-family: var(--font-mono);
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 0.3rem;
+}
+
+.donut-total span {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.donut-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--text-muted2);
+}
+
+.donut-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.fcrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.8rem;
+}
+
+.fcrow:last-child {
+  border-bottom: none;
+}
+
+.fcl {
+  color: var(--text-muted2);
+}
+
+.fcv {
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.item-list {
+  max-height: 320px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.item-list button {
+  margin-top: 0.5rem;
+  align-self: flex-start;
+}
+
+.chg-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.78rem;
+  font-family: var(--font-mono);
+}
+
+.chg-item:hover {
+  background: rgba(79, 158, 255, 0.08);
+}
+
 .items-page {
   display: flex;
   flex-direction: column;
@@ -344,6 +600,40 @@ select:focus {
   flex: 1;
   min-height: 0;
   gap: 1rem;
+}
+
+.kpi-bar {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+}
+
+.kc {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.75rem;
+}
+
+.klbl {
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.25rem;
+}
+
+.kval {
+  font-family: var(--font-mono);
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.ksub {
+  font-size: 0.66rem;
+  color: var(--text-muted);
+  margin-top: 0.15rem;
 }
 
 .items-toolbar {
@@ -361,7 +651,52 @@ select:focus {
   color: var(--text-muted);
   font-size: 0.78rem;
   font-family: var(--font-mono);
+}
+
+.items-toolbar-actions {
+  display: flex;
+  gap: 0.5rem;
   margin-left: auto;
+}
+
+.items-toolbar-actions button.on {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+/* display:block + negative margin so the tint fills the whole <td> box (matches original,
+   which paints background on the <td> itself) instead of just hugging the span's text. */
+.hist-high,
+.hist-low,
+.sum-min-cell {
+  display: block;
+  margin: -0.35rem -0.55rem;
+  padding: 0.35rem 0.55rem;
+}
+
+/* Matches original's CAT cell: plain small muted text, not bold mono — this (not just column
+   width) is why the original's CAT column renders so much narrower than ours did. */
+.cat-cell {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--text-muted2);
+}
+
+.hist-high {
+  color: var(--success);
+  background: rgba(34, 197, 94, 0.09);
+}
+
+.hist-low {
+  color: var(--danger);
+  background: rgba(239, 68, 68, 0.07);
+}
+
+.sum-min-cell {
+  color: var(--accent);
+  font-weight: 700;
+  background: rgba(0, 212, 170, 0.04);
 }
 
 .items-table-wrap {
@@ -370,21 +705,115 @@ select:focus {
   min-height: 0;
   display: flex;
   flex-direction: column;
-}
-
-.items-table-scroll {
-  flex: 1;
-  overflow: auto;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: var(--card);
+  overflow: hidden;
+}
+
+.items-table-wrap:focus {
+  outline: none;
+}
+
+/* Frozen columns (รหัส/ชื่ออะไหล่) live in their own non-scrolling table so they stay visible
+   while the rest of the columns scroll. The header row lives in its own fixed (non
+   vertically-scrolling) section above the body, with the scroll-side header's horizontal
+   position synced to the body via JS on scroll — we avoid position:sticky entirely here, since
+   sticky on table cells combined with a horizontally-scrolling ancestor is unreliable across
+   browsers/rendering engines. */
+.items-header-split {
+  flex-shrink: 0;
+  display: flex;
+  border-bottom: 1px solid var(--border);
+}
+
+.items-header-scroll {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.items-split-row {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.items-frozen-cols {
+  flex-shrink: 0;
+  align-self: flex-start;
+  box-shadow: 4px 0 10px rgba(0, 0, 0, 0.15);
+}
+
+/* align-self:flex-start stops the flex row's default cross-axis stretch from capping this
+   element's height at the viewport size — without it, overflow-x:auto (which forces overflow-y
+   to a non-visible computed value per the CSS spec) would clip all content past that height
+   instead of letting the outer .items-split-row scroll to reveal it. One side effect: since this
+   element now grows to its full (un-clipped) content height, ITS OWN native horizontal scrollbar
+   ends up thousands of pixels down at the bottom of that full height, not the visible viewport —
+   so we hide it and drive horizontal scrolling entirely from the dedicated .items-hscroll-bar
+   below instead (still scrollable here via touch/trackpad, just without a visible thumb). */
+.items-table-scroll {
+  flex: 1;
+  min-width: 0;
+  align-self: flex-start;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+
+.items-table-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.items-hscroll-track {
+  flex-shrink: 0;
+  display: flex;
+  border-top: 1px solid var(--border);
+}
+
+.items-hscroll-spacer {
+  flex-shrink: 0;
+}
+
+.items-hscroll-bar {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  height: 14px;
+}
+
+/* The native scrollbar here defaults to a very faint, almost invisible track/thumb — give it an
+   explicit color that visibly strengthens on hover, so it reads as "grab this to scroll". */
+.items-hscroll-bar::-webkit-scrollbar {
+  height: 14px;
+}
+
+.items-hscroll-bar::-webkit-scrollbar-track {
+  background: var(--card2);
+}
+
+.items-hscroll-bar::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 7px;
+  transition: background 0.15s ease;
+}
+
+.items-hscroll-bar::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
 }
 
 .items-table {
   width: 100%;
-  min-width: 2200px;
   table-layout: fixed;
   border-collapse: collapse;
+}
+
+.items-table-frozen {
+  width: auto;
 }
 
 .items-table td {
@@ -398,12 +827,35 @@ select:focus {
   font-weight: 600;
 }
 
-.items-table thead tr.lrow th {
-  position: sticky;
+.items-table td.active-cell {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.items-table thead th {
+  position: relative;
+}
+
+.th-resizer {
+  position: absolute;
   top: 0;
+  right: 0;
+  height: 100%;
+  width: 6px;
+  cursor: col-resize;
+  user-select: none;
+  touch-action: none;
+}
+
+.th-resizer:hover,
+.th-resizer.resizing {
+  background: var(--accent);
+  opacity: 0.5;
+}
+
+.items-table thead tr.lrow th {
   height: 30px;
   background: var(--surf);
-  z-index: 2;
   font-size: 0.63rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -412,11 +864,8 @@ select:focus {
 }
 
 .items-table thead tr.frow th {
-  position: sticky;
-  top: 30px;
   height: 28px;
   background: var(--card);
-  z-index: 2;
   padding: 2px 4px;
 }
 
@@ -445,6 +894,20 @@ select:focus {
   white-space: nowrap;
 }
 
+/* The frozen and scroll tables are two independent <table> elements whose rows are only kept
+   aligned because every row is forced to the exact same height — otherwise a single cell with
+   taller natural content (e.g. the PR qty <input>) would make that table's rows grow taller than
+   the other table's, and the two would drift out of alignment as you scroll. */
+.items-table tbody tr {
+  height: 32px;
+}
+
+.items-table tbody td {
+  height: 32px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
 .items-table tbody tr:hover td {
   background: rgba(255, 255, 255, 0.03);
   cursor: pointer;
@@ -459,7 +922,7 @@ select:focus {
 .badge {
   display: inline-flex;
   align-items: center;
-  padding: 0.1rem 0.5rem;
+  padding: 1px 5px;
   border-radius: 4px;
   font-size: 0.68rem;
   font-weight: 700;
@@ -503,27 +966,82 @@ select:focus {
   color: var(--flat);
 }
 
+.pr-qty-cell {
+  /* Expands past the <td>'s own padding (0.35rem 0.55rem, set by the generic .items-table td
+     rule) via negative margin, so the input below can genuinely fill the ENTIRE cell —
+     width/height:100% alone only fills the td's content box *inside* that padding, leaving a
+     real dead zone around the input where a click lands on the plain <td> instead. That click
+     still looks like it worked (the td gets the active-cell ring) but isn't focused, so typing
+     silently goes nowhere — this was the actual cause of the reported "stuck" input. */
+  display: block;
+  margin: -0.35rem -0.55rem;
+  padding: 0.35rem 0.55rem;
+}
+
 .pr-qty-cell input {
-  width: 68px;
-  padding: 0.2rem 0.4rem;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 0 0.4rem;
   font-size: 0.78rem;
   font-family: var(--font-mono);
   color: var(--accent2);
   text-align: right;
   border-radius: 4px;
+  -moz-appearance: textfield;
+}
+
+.pr-qty-cell input::-webkit-inner-spin-button,
+.pr-qty-cell input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 /* ---------- detail panel ---------- */
 
 .detail-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
   width: 520px;
   flex-shrink: 0;
   background: var(--surf);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
+  overflow: hidden;
+  /* Matches the original's `.dpanel{transition:flex .25s}` — collapsing/expanding the panel
+     (a discrete click) animates smoothly so the table area visibly grows/shrinks alongside it.
+     Dragging the resize handle temporarily disables this (see ItemDetailPanel.tsx's
+     onResizeMouseDown/onMouseUp) so continuous mousemove-driven width changes stay snappy
+     instead of rubber-banding behind the cursor. */
+  transition: width 0.25s ease;
+}
+
+/* The resizer and collapse toggle must stay pinned to the panel's own (non-scrolling) box —
+   .detail-panel-scroll below is the ONLY part that scrolls, so scrolling the dashboard's
+   content down no longer carries the resize handle out of view with it. */
+.detail-panel-scroll {
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 1.1rem;
-  transition: width 0.2s ease, padding 0.2s ease;
+}
+
+.detail-panel-resizer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 2;
+  user-select: none;
+  touch-action: none;
+}
+
+.detail-panel-resizer:hover {
+  background: var(--accent);
+  opacity: 0.5;
 }
 
 .detail-panel-collapsed {
@@ -575,13 +1093,24 @@ select:focus {
 }
 
 .chip {
-  background: var(--card);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--card2);
   border: 1px solid var(--border-strong);
-  border-radius: 999px;
-  padding: 0.25rem 0.7rem;
-  font-size: 0.72rem;
+  border-radius: 4px;
+  padding: 2px 8px;
+}
+
+.chip-label {
+  font-size: 0.625rem;
+  color: var(--text-muted);
+}
+
+.chip-value {
+  font-size: 0.75rem;
+  font-weight: 600;
   font-family: var(--font-mono);
-  color: var(--text-muted2);
 }
 
 .detail-panel-header {
@@ -630,8 +1159,6 @@ select:focus {
 .kpi-label {
   font-size: 0.62rem;
   color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 .kpi-value {
@@ -652,6 +1179,29 @@ select:focus {
 
 .detail-panel-body section {
   margin-bottom: 1.3rem;
+}
+
+.detail-charts-grid {
+  display: grid;
+  /* Fixed 2 columns (not auto-fit/minmax) so narrowing the panel shrinks each card in place —
+     auto-fit would instead drop to a single column and push the bottom two cards down a row. */
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.8rem;
+  margin-bottom: 1.3rem;
+}
+
+.detail-charts-grid .detail-chart-card {
+  margin-bottom: 0;
+}
+
+.detail-chart-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.7rem 0.8rem;
+  /* Without this, a grid item's intrinsic content width (min-content) floors its 1fr track —
+     that's what let the next-bar-list card force its whole grid column wider than its sibling. */
+  min-width: 0;
 }
 
 .detail-panel-body h3 {
@@ -694,11 +1244,64 @@ select:focus {
   color: var(--danger);
 }
 
+/* Fill the whole <td> box (matches original's background painted directly on the <td>),
+   not just hug the span's text. Only the danger tone actually gets a tint (matches .nbd). */
+.next-cell {
+  display: block;
+  margin: -0.35rem -0.55rem;
+  padding: 0.35rem 0.55rem;
+}
+
+.next-cell.tone-danger {
+  background: rgba(239, 68, 68, 0.1);
+}
+
 .tone-info {
   color: var(--accent2);
 }
 
 /* ---------- next-1..5 bar list ---------- */
+
+.whatif-pr-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.whatif-pr-row label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.whatif-pr-row input {
+  flex: 1;
+  min-width: 0;
+  -moz-appearance: textfield;
+}
+
+.whatif-pr-row input::-webkit-inner-spin-button,
+.whatif-pr-row input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.whatif-pr-hint {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  margin-bottom: 0.6rem;
+  line-height: 1.4;
+}
+
+.next-bar-whatif {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  /* color comes from the tone-* class (ok/warn/danger) applied alongside this, same as
+     .next-bar-value, so it's visually obvious whether the trial PR qty is actually enough */
+  white-space: nowrap;
+}
 
 .next-bar-list {
   display: flex;
@@ -718,9 +1321,12 @@ select:focus {
 
 .next-bar-row {
   display: grid;
-  grid-template-columns: 90px 1fr 60px;
+  /* Kept as small as the label/value text actually needs — a wide fixed floor here (it used to
+     be 90px/60px) forces this card wider than its chart siblings, so the 2-col charts grid ends
+     up lopsided (this column stuck wide, the other collapsed) instead of shrinking evenly. */
+  grid-template-columns: 52px 1fr 56px auto;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .next-bar-label {
@@ -778,40 +1384,57 @@ select:focus {
   padding: 0.9rem;
 }
 
-.plan-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: 0.5rem;
-}
-
-.plan-card-header h3 {
-  margin: 0;
+.plan-card-title {
+  margin: 0 0 0.6rem;
   text-transform: none;
   letter-spacing: normal;
   font-size: 0.85rem;
   color: var(--text);
 }
 
-.plan-card-due {
-  text-align: right;
-  font-size: 0.68rem;
-}
-
-.plan-due-label {
-  display: block;
-  color: var(--text-muted);
-}
-
-.plan-due-value {
-  font-weight: 700;
-  font-size: 0.9rem;
-}
-
-.plan-status {
-  font-size: 1.1rem;
-  font-weight: 700;
+.plan-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid;
+  border-radius: var(--radius-md);
   margin-bottom: 0.75rem;
+}
+
+.plan-banner-due {
+  text-align: right;
+}
+
+.plan-banner-label {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.plan-banner-value {
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.plan-banner.tone-danger {
+  background: color-mix(in srgb, var(--danger) 9%, transparent);
+  border-color: color-mix(in srgb, var(--danger) 27%, transparent);
+}
+
+.plan-banner.tone-warn {
+  background: color-mix(in srgb, var(--warning) 9%, transparent);
+  border-color: color-mix(in srgb, var(--warning) 27%, transparent);
+}
+
+.plan-banner.tone-info {
+  background: color-mix(in srgb, var(--accent2) 9%, transparent);
+  border-color: color-mix(in srgb, var(--accent2) 27%, transparent);
+}
+
+.plan-banner.tone-ok {
+  background: color-mix(in srgb, var(--success) 9%, transparent);
+  border-color: color-mix(in srgb, var(--success) 27%, transparent);
 }
 
 .plan-kpis {
@@ -821,47 +1444,53 @@ select:focus {
   margin-bottom: 0.75rem;
 }
 
+.plan-timeline-label {
+  font-size: 0.625rem;
+  color: var(--text-muted);
+  margin-bottom: 0.3rem;
+}
+
 .plan-timeline {
   display: flex;
-  gap: 0.35rem;
-  margin-bottom: 0.6rem;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--card2);
+  margin-bottom: 0.5rem;
 }
 
 .timeline-tab {
   flex: 1;
   text-align: center;
-  padding: 0.35rem 0.2rem;
-  border-radius: var(--radius-sm);
-  background: var(--card);
-  border: 1px solid var(--border);
-  font-size: 0.72rem;
+  padding: 0.5rem 0.2rem;
+  border-right: 1px solid var(--border);
+  font-size: 0.7rem;
   color: var(--text-muted2);
 }
 
-.timeline-tab.active.tone-danger {
-  background: rgba(239, 68, 68, 0.15);
-  border-color: var(--danger);
+.timeline-tab:last-child {
+  border-right: none;
+}
+
+/* Matches the original: background is driven purely by trigger/below/above-MIN status, not by
+   overall urgency tier — a "just needs planning" month still gets the same red highlight as an
+   urgent one, it just isn't bold/colored text unless it's the actual trigger month. */
+.timeline-tab.above {
+  background: rgba(34, 197, 94, 0.06);
+}
+
+.timeline-tab.below {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.timeline-tab.trigger {
+  background: rgba(239, 68, 68, 0.25);
   color: var(--danger);
-  font-weight: 700;
-}
-
-.timeline-tab.active.tone-warn {
-  background: rgba(245, 158, 11, 0.15);
-  border-color: var(--warning);
-  color: var(--warning);
-  font-weight: 700;
-}
-
-.timeline-tab.active.tone-info {
-  background: rgba(79, 158, 255, 0.15);
-  border-color: var(--accent2);
-  color: var(--accent2);
   font-weight: 700;
 }
 
 .plan-summary {
   font-size: 0.76rem;
-  color: var(--text-muted2);
+  color: var(--text-muted);
   margin-bottom: 0.75rem;
 }
 
@@ -875,18 +1504,32 @@ select:focus {
   font-size: 0.68rem;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  color: var(--text-muted);
+  color: var(--text-muted2);
   margin-bottom: 0.4rem;
 }
 
-.plan-reasons ul {
-  margin: 0;
-  padding-left: 1.1rem;
+.reason-line {
+  padding: 3px 0 3px 10px;
+  margin-bottom: 3px;
+  border-left: 2px solid;
   font-size: 0.78rem;
   color: var(--text-muted2);
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
+}
+
+.reason-line.tone-danger {
+  border-left-color: color-mix(in srgb, var(--danger) 40%, transparent);
+}
+
+.reason-line.tone-warn {
+  border-left-color: color-mix(in srgb, var(--warning) 40%, transparent);
+}
+
+.reason-line.tone-info {
+  border-left-color: color-mix(in srgb, var(--accent2) 40%, transparent);
+}
+
+.reason-line.tone-ok {
+  border-left-color: color-mix(in srgb, var(--success) 40%, transparent);
 }
 
 .suggestion-list {
@@ -932,9 +1575,9 @@ select:focus {
 }
 
 .narrative-section h4 {
-  font-size: 0.68rem;
+  font-size: 0.625rem;
   font-weight: 700;
-  color: var(--accent2);
+  color: var(--text-muted2);
   text-transform: uppercase;
   letter-spacing: 0.03em;
   margin-bottom: 0.3rem;
@@ -943,8 +1586,36 @@ select:focus {
 .narrative-section p {
   font-size: 0.78rem;
   line-height: 1.6;
-  color: var(--text-muted2);
+  color: var(--text);
   margin: 0 0 0.25rem;
+}
+
+.narrative-subheading {
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: var(--accent2);
+  margin: 0.6rem 0 0.2rem;
+}
+
+.narrative-subheading:first-child {
+  margin-top: 0;
+}
+
+.narrative-bullets {
+  font-size: 0.78rem;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.narrative-bullet {
+  padding-left: 1rem;
+  position: relative;
+}
+
+.narrative-bullet::before {
+  content: "•";
+  position: absolute;
+  left: 0.2rem;
 }
 
 /* ---------- full field reference grid ---------- */
@@ -1004,7 +1675,7 @@ select:focus {
 
 /* ---------- generic tables (admin/audit pages) ---------- */
 
-table {
+table:not(.items-table) {
   border-collapse: collapse;
   width: 100%;
   margin-top: 0.75rem;

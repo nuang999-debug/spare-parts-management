@@ -52,10 +52,26 @@ function toStringOrNull(v: unknown): string | null {
   return s === "" ? null : s;
 }
 
+/**
+ * Mirrors the original's normHdr(): case/whitespace-insensitive header comparison, so a
+ * re-exported file with e.g. "pur. price" or a stray non-breaking space doesn't hard-fail an
+ * import that the original tool would have accepted without complaint. The exact-name safety
+ * net (catching a genuinely shifted/renamed column) is preserved — only cosmetic formatting
+ * differences are tolerated.
+ */
+function normHdr(v: unknown): string {
+  return String(v ?? "")
+    .split(String.fromCharCode(160))
+    .join(" ")
+    .replace(/\s\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
 function findHeaderRowIndex(rows: unknown[][]): number {
   for (let r = 0; r < Math.min(6, rows.length); r++) {
     const first = rows[r]?.[0];
-    if (typeof first === "string" && first.trim() === "No_") return r;
+    if (typeof first === "string" && normHdr(first) === "no_") return r;
   }
   return -1;
 }
@@ -89,9 +105,10 @@ export function parseItemsRawWorkbook(buffer: Buffer): ParseResult {
   }
 
   const headerRow = allRows[headerRowIdx].map((h) => String(h).trim());
+  const normalizedHeaderRow = headerRow.map(normHdr);
   const colIndex: Record<string, number> = {};
   for (const header of HEADERS) {
-    const idx = headerRow.indexOf(header);
+    const idx = normalizedHeaderRow.indexOf(normHdr(header));
     if (idx === -1) {
       errors.push(`Missing expected column "${header}". The file layout may have changed.`);
     } else {

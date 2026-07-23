@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../db";
 import { requireAuth } from "../middleware/requireAuth";
+import { requireRole } from "../middleware/requireRole";
 import { HttpError } from "../middleware/errorHandler";
 import { applyPackingRule } from "../services/packingRules";
 import { recordChange } from "../lib/auditLog";
@@ -17,6 +18,9 @@ const LIST_SELECT = {
   class: true,
   category: true,
   vendor: true,
+  purchasePrice: true,
+  remark: true,
+  forModel: true,
   stockQty: true,
   poQty: true,
   backorderQty: true,
@@ -38,7 +42,9 @@ const LIST_SELECT = {
   prIsOverride: true,
   lastImportedAt: true,
   usageHistory: {
-    where: { monthIndex: { gte: 7 } },
+    // The 6-month trend window (AO-AT) is M-6..M-1 (monthIndex 6..11), excluding
+    // the current/incomplete month M-0 (monthIndex 12).
+    where: { monthIndex: { gte: 6, lt: 12 } },
     orderBy: { monthIndex: "asc" as const },
     select: { monthIndex: true, periodLabel: true, qty: true },
   },
@@ -121,6 +127,40 @@ itemsRouter.patch("/:id/pr", async (req, res, next) => {
     });
 
     res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+});
+
+itemsRouter.post("/clear-all-pr", requireRole("ADMIN"), async (req, res, next) => {
+  try {
+    const changedById = req.user!.id;
+
+    const itemsToClear = await prisma.item.findMany({
+      where: { prQtyCurrent: { not: null } },
+      select: { id: true, prQtyCurrent: true },
+    });
+
+    await prisma.$transaction(async (tx) => {
+      for (const item of itemsToClear) {
+        await recordChange(tx, {
+          entityType: "Item",
+          entityId: String(item.id),
+          fieldName: "prQtyCurrent",
+          oldValue: item.prQtyCurrent,
+          newValue: null,
+          action: "UPDATE",
+          changedById,
+          note: "ล้าง PR ทั้งหมด",
+        });
+      }
+      await tx.item.updateMany({
+        where: { prQtyCurrent: { not: null } },
+        data: { prQtyCurrent: null, prIsOverride: false },
+      });
+    });
+
+    res.json({ clearedCount: itemsToClear.length });
   } catch (err) {
     next(err);
   }

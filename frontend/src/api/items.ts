@@ -17,6 +17,9 @@ export interface ItemListRow {
   class: string | null;
   category: string | null;
   vendor: string | null;
+  purchasePrice: number | null;
+  remark: string | null;
+  forModel: string | null;
   stockQty: number;
   poQty: number;
   backorderQty: number;
@@ -37,7 +40,7 @@ export interface ItemListRow {
   prQtyCurrent: number | null;
   prIsOverride: boolean;
   lastImportedAt: string | null;
-  /** Last 6 months only (monthIndex 7-12 / M-5..M-0), for the dense table's per-month columns. */
+  /** Last 6 months only (monthIndex 6-11 / M-6..M-1, excludes the current/incomplete month), for the dense table's per-month columns. */
   usageHistory: ItemUsageHistoryRow[];
 }
 
@@ -48,13 +51,10 @@ export interface ItemYearlySalesRow {
 
 export interface ItemDetail extends Omit<ItemListRow, "usageHistory"> {
   dimension: string | null;
-  purchasePrice: number | null;
   unitCost: number | null;
   minUsage: number | null;
   maxUsage: number | null;
   recommendedMin: number | null;
-  remark: string | null;
-  forModel: string | null;
   /** Full 13 months (M-12..M-0). */
   usageHistory: ItemUsageHistoryRow[];
   yearlySales: ItemYearlySalesRow[];
@@ -91,4 +91,8 @@ export function updateItemPr(id: number, newPrQty: number): Promise<ItemDetail> 
 
 export function getItemHistory(id: number): Promise<ItemHistoryEntry[]> {
   return request<ItemHistoryEntry[]>(`/items/${id}/history`);
+}
+
+export function clearAllPr(): Promise<{ clearedCount: number }> {
+  return request<{ clearedCount: number }>("/items/clear-all-pr", { method: "POST" });
 }

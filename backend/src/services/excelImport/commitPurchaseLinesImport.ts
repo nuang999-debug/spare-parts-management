@@ -57,45 +57,64 @@ export async function commitPurchaseLinesImport(params: {
         poBucketsByNo.set(row.itemNoNormalized, buckets);
       }
 
-      const affectedItemNos = [...new Set(rows.map((r) => r.itemNoNormalized))];
       const packingRules = await tx.packingUnitRule.findMany({ where: { active: true } });
       const packingRuleByNo = new Map(packingRules.map((r) => [r.itemNoNormalized, r]));
       const now = new Date();
 
-      let itemsUpdated = 0;
-      for (const idChunk of chunk(affectedItemNos, 500)) {
-        const items = await tx.item.findMany({ where: { itemNoNormalized: { in: idChunk } } });
-        for (const item of items) {
-          const poBuckets = poBucketsByNo.get(item.itemNoNormalized) ?? [0, 0, 0, 0, 0];
-          const next = computeNextForecast(item.stockQty, poBuckets, item.avgMonth ?? 0);
-          const calcStatus = computeStatus(next[0], next[1], item.sumMin);
-          const suggestion = computeSuggestedOrder(next, item.sumMin);
-          const mustOrderByDate = computeMustOrderByDate(suggestion.triggerMonth, item.leadTimeDays, now);
-          const rule = packingRuleByNo.get(item.itemNoNormalized);
-          const prQtySuggested = applyPackingRule(suggestion.orderQty, rule);
-          const prQtyCurrent = item.prIsOverride ? item.prQtyCurrent : prQtySuggested;
+      // Mirrors the original's recomputeForecastWithPO(): it re-derives Next-1..5 for EVERY
+      // item on every Purchase Lines import, not just the ones present in the new file. An
+      // item whose PO lines disappeared from this import (received/cancelled) must fall back
+      // to its baseline forecast (poQty dumped into bucket 1) — otherwise it would keep a
+      // stale, PO-inflated forecast forever and silently stop recommending a real reorder.
+      const allItems = await tx.item.findMany({
+        select: {
+          id: true,
+          itemNoNormalized: true,
+          stockQty: true,
+          poQty: true,
+          sumMin: true,
+          leadTimeDays: true,
+          avgMonth6: true,
+          prIsOverride: true,
+          prQtyCurrent: true,
+        },
+      });
 
-          await tx.item.update({
-            where: { id: item.id },
-            data: {
-              next1: next[0],
-              next2: next[1],
-              next3: next[2],
-              next4: next[3],
-              next5: next[4],
-              calcStatus,
-              suggestedOrderQty: suggestion.orderQty,
-              mustOrderByDate,
-              prQtySuggested,
-              prQtyCurrent,
-            },
-          });
-          itemsUpdated++;
-        }
+      let itemsUpdated = 0;
+      for (const itemChunk of chunk(allItems, 500)) {
+        await Promise.all(
+          itemChunk.map(async (item) => {
+            const poBuckets = poBucketsByNo.get(item.itemNoNormalized) ?? [item.poQty, 0, 0, 0, 0];
+            const next = computeNextForecast(item.stockQty, poBuckets, item.avgMonth6 ?? 0);
+            const calcStatus = computeStatus(next[0], next[1], item.sumMin);
+            const suggestion = computeSuggestedOrder(next, item.sumMin);
+            const mustOrderByDate = computeMustOrderByDate(suggestion.triggerMonth, item.leadTimeDays, now);
+            const rule = packingRuleByNo.get(item.itemNoNormalized);
+            const prQtySuggested = applyPackingRule(suggestion.orderQty, rule);
+            const prQtyCurrent = item.prIsOverride ? item.prQtyCurrent : null;
+
+            await tx.item.update({
+              where: { id: item.id },
+              data: {
+                next1: next[0],
+                next2: next[1],
+                next3: next[2],
+                next4: next[3],
+                next5: next[4],
+                calcStatus,
+                suggestedOrderQty: suggestion.orderQty,
+                mustOrderByDate,
+                prQtySuggested,
+                prQtyCurrent,
+              },
+            });
+            itemsUpdated++;
+          })
+        );
       }
 
       return { importBatchId: batch.id, rowCount: rows.length, itemsUpdated };
     },
-    { timeout: 5 * 60_000, maxWait: 15_000 }
+    { timeout: 10 * 60_000, maxWait: 15_000 }
   );
 }

@@ -13,7 +13,7 @@ import {
 
 // Real row from data 16-07-26.xlsx, item "010 3098 500": M-12..M-0
 const HIST13 = [2, 4, 6, 6, 0, 6, 6, 18, 0, 43, 32, 3, 0];
-const HIST6 = HIST13.slice(7, 13); // last 6 months: M-5..M-0
+const HIST6 = HIST13.slice(6, 12); // 6-month trend window M-6..M-1, excludes the current/incomplete month M-0
 const STOCK_QTY = 52; // ST_N0
 const PO_QTY = 60; // PO_N0
 const LEAD_TIME_DAYS = 100;
@@ -109,9 +109,9 @@ describe("computeMustOrderByDate", () => {
 });
 
 describe("computeTrend", () => {
-  it("flags a downward trend for the real 010 3098 500 example", () => {
-    // HIST6 = [18, 0, 43, 32, 3, 0] -> old3 avg 20.33, new3 avg 11.67, -42.6%
-    expect(computeTrend(HIST6)).toBe("DOWN");
+  it("flags an upward trend for the real 010 3098 500 example", () => {
+    // HIST6 = [6, 18, 0, 43, 32, 3] -> old3 avg 8, new3 avg 26, +225%
+    expect(computeTrend(HIST6)).toBe("UP");
   });
 
   it("flags an upward trend when recent usage is notably higher", () => {
@@ -121,15 +121,25 @@ describe("computeTrend", () => {
   it("is flat within the +/-8% band", () => {
     expect(computeTrend([10, 10, 10, 10, 10, 11])).toBe("FLAT");
   });
+
+  it("is flat when the older 3 months had zero usage, even if usage picked up since", () => {
+    // No baseline to compare against, so this is never counted as "up" — matches the original tool.
+    expect(computeTrend([0, 0, 0, 20, 20, 20])).toBe("FLAT");
+  });
 });
 
 describe("computeRecommendedMin", () => {
-  it("matches the real 010 3098 500 example", () => {
+  it("matches the real 010 3098 500 example (avgMonth x leadTimeMonths x 1.2, unrounded)", () => {
     const avgMonth = computeAvgMonth(HIST13);
-    expect(computeRecommendedMin(avgMonth, LEAD_TIME_DAYS, HIST6)).toBe(53);
+    expect(computeRecommendedMin(avgMonth, LEAD_TIME_DAYS)).toBeCloseTo(42, 5);
+  });
+
+  it("returns 0 when there is no lead time", () => {
+    expect(computeRecommendedMin(10, null)).toBe(0);
+    expect(computeRecommendedMin(10, 0)).toBe(0);
   });
 
   it("returns 0 when there is no average demand", () => {
-    expect(computeRecommendedMin(0, 30, [0, 0, 0, 0, 0, 0])).toBe(0);
+    expect(computeRecommendedMin(0, 30)).toBe(0);
   });
 });
