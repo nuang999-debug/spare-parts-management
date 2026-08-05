@@ -2,7 +2,7 @@ services:
   - type: web
     name: spareparts-backend
     runtime: node
-    plan: starter
+    plan: free
     rootDir: backend
     buildCommand: npm install && npx prisma generate && npx prisma migrate deploy && npm run build
     startCommand: npm start
@@ -34,4 +34,4 @@ services:
 
 databases:
   - name: spareparts-db
-    plan: starter
+    plan: free
