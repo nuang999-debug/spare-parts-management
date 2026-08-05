@@ -1,4 +1,5 @@
 import { prisma } from "../../db";
+import { recordChange } from "../../lib/auditLog";
 import {
   computeAvgMonth,
   computeMaxUsage,
@@ -11,7 +12,7 @@ import {
   computeTrend,
 } from "../forecastCalc";
 import { applyPackingRule } from "../packingRules";
-import { loadLatestPoBucketsMap, type PoBucketsMap } from "./poBuckets";
+import { loadLatestPoData, type PoBucketsMap } from "./poBuckets";
 import type { ParsedItemRow } from "./parseItemsRaw";
 
 const ITEM_CHUNK_SIZE = 500;
@@ -34,6 +35,7 @@ function computeItemData(
     existingPr: { prQtyCurrent: number | null; prIsOverride: boolean } | undefined;
     packingRule: PackingRuleLite | undefined;
     poBuckets: PoBucketsMap;
+    poTotals: Map<string, number>;
     now: Date;
   }
 ) {
@@ -48,7 +50,10 @@ function computeItemData(
   const minUsage = computeMinUsage(hist13);
   const maxUsage = computeMaxUsage(hist13);
 
-  const poBuckets = ctx.poBuckets.get(row.itemNoNormalized) ?? [row.poQty, 0, 0, 0, 0];
+  // Purchase Line data is the primary PO source now — an item missing from the latest
+  // Purchase Lines batch has no outstanding PO (0), not a fallback to the Items file's own
+  // (potentially stale) PO_N0 column.
+  const poBuckets = ctx.poBuckets.get(row.itemNoNormalized) ?? [0, 0, 0, 0, 0];
   const next = computeNextForecast(row.stockQty, poBuckets, avgMonth6);
   const calcStatus = computeStatus(next[0], next[1], row.sumMin);
   const calcTrend = computeTrend(hist6);
@@ -72,7 +77,7 @@ function computeItemData(
     purchasePrice: row.purchasePrice,
     unitCost: row.unitCost,
     vendor: row.vendor,
-    poQty: row.poQty,
+    poQty: ctx.poTotals.get(row.itemNoNormalized) ?? 0,
     stockQty: row.stockQty,
     backorderQty: row.backorderQty,
     leadTimeDays: row.leadTimeDays,
@@ -130,15 +135,17 @@ export async function commitItemsImport(params: {
       const packingRules = await tx.packingUnitRule.findMany({ where: { active: true } });
       const packingRuleByNo = new Map(packingRules.map((r) => [r.itemNoNormalized, r]));
 
-      const poBuckets = await loadLatestPoBucketsMap(tx);
+      const { buckets: poBuckets, totals: poTotals } = await loadLatestPoData(tx);
       const now = new Date();
 
       const itemIdByNo = new Map<string, number>();
       for (const row of rows) {
+        const existingPr = existingByNo.get(row.itemNoNormalized);
         const data = computeItemData(row, {
-          existingPr: existingByNo.get(row.itemNoNormalized),
+          existingPr,
           packingRule: packingRuleByNo.get(row.itemNoNormalized),
           poBuckets,
+          poTotals,
           now,
         });
         const item = await tx.item.upsert({
@@ -148,6 +155,23 @@ export async function commitItemsImport(params: {
           select: { id: true },
         });
         itemIdByNo.set(row.itemNoNormalized, item.id);
+
+        // A user's manually-overridden PR qty gets re-rounded to the CURRENT packing rule on
+        // every reimport (e.g. the multiple-of value changed since they set it) — that silently
+        // changes a value they explicitly chose, so it needs the same audit trail as any other
+        // PR edit, not just the ones made through the PATCH endpoint.
+        if (existingPr?.prIsOverride && existingPr.prQtyCurrent !== data.prQtyCurrent) {
+          await recordChange(tx, {
+            entityType: "Item",
+            entityId: String(item.id),
+            fieldName: "prQtyCurrent",
+            oldValue: existingPr.prQtyCurrent,
+            newValue: data.prQtyCurrent,
+            action: "UPDATE",
+            changedById: uploadedById,
+            note: "Re-rounded to packing rule on reimport",
+          });
+        }
       }
 
       const touchedIds = [...itemIdByNo.values()];

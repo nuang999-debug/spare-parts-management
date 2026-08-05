@@ -65,4 +65,26 @@ describe("parsePurchaseLinesWorkbook date-serial parsing (real .xlsx round trip)
     expect(sep1?.bucketMonth).toBe(2);
     expect(oct1?.bucketMonth).toBe(3);
   });
+
+  it("buckets a receipt date stored as plain TEXT the same way as a real date/serial cell", () => {
+    // Some export rows carry "Expected Receipt Date" as a text string rather than a real Excel
+    // date serial or Date object — that hits a separate code path (new Date(string) instead of
+    // XLSX.SSF.parse_date_code), which could reintroduce the exact same 1st-of-month rollback
+    // the test above guards against, depending on the server's local timezone offset.
+    const today = new Date(2026, 6, 21); // 2026-07-21
+    const header = ["No.", "Quantity", "Quantity Received", "Expected Receipt Date"];
+    const rows = [
+      header,
+      ["ITEM-TXT-SEP1", 10, 0, "2026-09-01"], // ISO text -> diff=2 -> bucket 2
+      ["ITEM-TXT-OCT1", 5, 0, "10/1/2026"], // M/D/YYYY text -> diff=3 -> bucket 3
+    ];
+    const buffer = buildWorkbookBuffer(rows);
+    const result = parsePurchaseLinesWorkbook(buffer, today);
+
+    expect(result.errors).toEqual([]);
+    const sep1 = result.rows.find((r) => r.itemNoRaw === "ITEM-TXT-SEP1");
+    const oct1 = result.rows.find((r) => r.itemNoRaw === "ITEM-TXT-OCT1");
+    expect(sep1?.bucketMonth).toBe(2);
+    expect(oct1?.bucketMonth).toBe(3);
+  });
 });

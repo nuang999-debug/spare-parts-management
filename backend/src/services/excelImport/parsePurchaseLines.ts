@@ -5,6 +5,10 @@ import { toNumber } from "../../lib/numeric";
 // Business Central "Purchase Lines" export — only these 4 columns are actually needed,
 // matched by name (case/whitespace-insensitive) since the real export carries ~29 columns total.
 const REQUIRED_HEADERS = ["No.", "Quantity", "Quantity Received", "Expected Receipt Date"];
+// Optional — present in every real export seen so far, but parsing doesn't hard-fail without it
+// (see commitPurchaseLinesImport's unit-of-measure conversion, which treats a missing/unreadable
+// code as "already in base units", the safe default).
+const UOM_HEADER = "Unit of Measure Code";
 
 export interface ParsedPurchaseLine {
   itemNoRaw: string;
@@ -15,6 +19,16 @@ export interface ParsedPurchaseLine {
   expectedReceiptDate: Date | null;
   /** 1-5, or null if the receipt is more than 5 months out (excluded from the Next-1..5 forecast). */
   bucketMonth: number | null;
+  /**
+   * BC's purchase unit for this line (e.g. "PC", "PACK", "25M") — for most items this is the
+   * base unit ("PC") and Quantity/Quantity Received are already in base-unit counts. For the
+   * handful of items with an active packing-unit rule (e.g. hose sold by the 25M reel, dust bags
+   * by the 5-pack), BC records these columns in PACKAGES, not pieces/meters — confirmed against
+   * every real Purchase Lines export on file, where these items consistently carry a non-"PC"
+   * code here. commitPurchaseLinesImport multiplies by the packing rule's multipleOf when this
+   * is set and isn't "PC", to convert into the same base unit Stock/Next-1..5/Sum MIN use.
+   */
+  unitOfMeasureCode: string | null;
 }
 
 export interface ParsePurchaseLinesResult {
@@ -46,7 +60,17 @@ function parseDate(v: unknown): Date | null {
   }
   if (v instanceof Date && !Number.isNaN(v.getTime())) return v;
   if (typeof v === "string" && v.trim() !== "") {
-    const parsed = new Date(v);
+    const s = v.trim();
+    // Same y/m/d-via-local-constructor approach as the numeric branch above, for the two date
+    // text formats this export can actually contain — a cell stored as text rather than a real
+    // Excel serial hits `new Date(string)` instead, which parses a bare "YYYY-MM-DD" as UTC
+    // midnight and can reintroduce the exact same 1st-of-month rollback this function exists to
+    // prevent, depending on the server's local timezone offset.
+    const iso = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (iso) return new Date(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3]));
+    const slash = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (slash) return new Date(Number(slash[3]), Number(slash[1]) - 1, Number(slash[2]));
+    const parsed = new Date(s);
     if (!Number.isNaN(parsed.getTime())) return parsed;
   }
   return null;
@@ -104,6 +128,7 @@ export function parsePurchaseLinesWorkbook(buffer: Buffer, today: Date = new Dat
   if (errors.length) {
     return { rows: [], rowCount: 0, warnings, errors };
   }
+  const uomIdx = headerRow.indexOf(normHeader(UOM_HEADER));
 
   const rows: ParsedPurchaseLine[] = [];
   for (const raw of allRows.slice(1)) {
@@ -118,6 +143,7 @@ export function parsePurchaseLinesWorkbook(buffer: Buffer, today: Date = new Dat
 
     const itemNoRaw = String(itemNoCell).trim();
     const expectedReceiptDate = parseDate(raw[colIndex["Expected Receipt Date"]]);
+    const unitOfMeasureCode = uomIdx === -1 ? null : String(raw[uomIdx] ?? "").trim() || null;
 
     rows.push({
       itemNoRaw,
@@ -126,6 +152,7 @@ export function parsePurchaseLinesWorkbook(buffer: Buffer, today: Date = new Dat
       quantityReceived,
       outstandingQty,
       expectedReceiptDate,
+      unitOfMeasureCode,
       bucketMonth: computeBucketMonth(expectedReceiptDate, today),
     });
   }
