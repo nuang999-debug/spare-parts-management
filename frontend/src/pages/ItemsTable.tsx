@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import {
   createColumnHelper,
   flexRender,
@@ -42,7 +42,35 @@ declare module "@tanstack/react-table" {
     onNavigatePrRow?: (itemId: number, direction: 1 | -1) => void;
     onNavigatePrColumn?: (itemId: number, direction: 1 | -1) => void;
     registerPrInput?: (itemId: number, el: HTMLInputElement | null) => void;
+    // Bumped once per successful "clear all PR" click. A PrQtyCell mid-edit has its own
+    // debounced auto-save timer running independently of this button — without a signal to
+    // abandon that timer, a value typed just before the click still gets auto-saved a moment
+    // after the bulk clear completes, silently undoing it for that one row.
+    clearSignal?: number;
   }
+}
+
+/**
+ * Polls the shared PR-update mutation cache (mutationKey: ["updateItemPr"], set in PrQtyCell)
+ * until nothing is in flight, or bails after `timeoutMs` as a safety net against a genuinely
+ * stuck/failed request blocking the bulk clear forever. Query-client-level, not tied to any one
+ * PrQtyCell instance's lifetime — this table is virtualized, so a row can scroll out of view and
+ * unmount while its edit is still in flight; a per-component onMutate/onSettled callback pair
+ * would silently stop firing at that point even though the request keeps running, which is
+ * exactly the gap that let "clear all" race an off-screen row's pending edit.
+ */
+function waitForPrMutationsToSettle(queryClient: QueryClient, timeoutMs = 3000): Promise<void> {
+  return new Promise((resolve) => {
+    const start = Date.now();
+    const check = () => {
+      if (queryClient.isMutating({ mutationKey: ["updateItemPr"] }) === 0 || Date.now() - start > timeoutMs) {
+        resolve();
+        return;
+      }
+      setTimeout(check, 50);
+    };
+    check();
+  });
 }
 
 const gteFilter: FilterFn<ItemListRow> = (row, columnId, filterValue) => {
@@ -182,6 +210,7 @@ const columns = [
         onNavigate={(direction) => info.table.options.meta?.onNavigatePrRow?.(info.row.original.id, direction)}
         onNavigateColumn={(direction) => info.table.options.meta?.onNavigatePrColumn?.(info.row.original.id, direction)}
         inputRef={(el) => info.table.options.meta?.registerPrInput?.(info.row.original.id, el)}
+        clearSignal={info.table.options.meta?.clearSignal}
       />
     ),
   }),
@@ -277,12 +306,14 @@ export default function ItemsTable({
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const prInputRefs = useRef<Map<number, HTMLInputElement>>(new Map()); // keyed by item id, not row index
+  const [clearSignal, setClearSignal] = useState(0);
   const clearAllPrMutation = useMutation({
     mutationFn: clearAllPr,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["items"] });
       queryClient.invalidateQueries({ queryKey: ["item"] });
       queryClient.invalidateQueries({ queryKey: ["item-history"] });
+      setClearSignal((n) => n + 1);
     },
   });
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -379,10 +410,16 @@ export default function ItemsTable({
         if (el) prInputRefs.current.set(itemId, el);
         else prInputRefs.current.delete(itemId);
       },
+      clearSignal,
     },
   });
 
   const rows = table.getRowModel().rows;
+  // Drives the toolbar count label's wording: a search/filter bypasses the BC=0 hide (see
+  // hasActiveFilter above), but that doesn't mean the CURRENT result set actually contains any
+  // BC=0 row — e.g. searching a real BC>0 item code by itself. Checking the real rows, not just
+  // whether a filter is active, keeps the label from claiming "includes BC=0" when it doesn't.
+  const includesZeroBc = hasActiveFilter && rows.some((r) => (r.original.sumMin ?? 0) <= 0);
   // A direct click/focus always lands on a cell the user can already see — running the
   // scroll-into-view effect for that case just yanks the viewport out from under the row that's
   // opening the detail panel at the same instant (which itself narrows .items-table-scroll),
@@ -580,7 +617,9 @@ export default function ItemsTable({
         <span className="items-count">
           {showAll
             ? `แสดง ${rows.length} / ${items?.length ?? 0} รายการ`
-            : `แสดง ${rows.length} รายการ (BC>0) จากทั้งหมด ${items?.length ?? 0} รายการ`}
+            : includesZeroBc
+              ? `แสดง ${rows.length} รายการ (รวม BC=0 เพราะมีการค้นหา/กรอง) จากทั้งหมด ${items?.length ?? 0} รายการ`
+              : `แสดง ${rows.length} รายการ (BC>0) จากทั้งหมด ${items?.length ?? 0} รายการ`}
         </span>
         <div className="items-toolbar-actions">
           <button type="button" className={alertOnly ? "on" : ""} onClick={() => setAlertOnly((v) => !v)}>
@@ -606,8 +645,19 @@ export default function ItemsTable({
             <button
               type="button"
               disabled={clearAllPrMutation.isPending}
-              onClick={() => {
+              onClick={async () => {
                 if (!window.confirm("ต้องการล้างค่า PR QTY ของทุกรายการทั้งหมดใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้")) return;
+                // A PR cell mid-edit (typed but not yet saved, or already saving) races the bulk
+                // clear below over the network: if that individual PATCH commits AFTER this
+                // request's DB write, the row keeps its value — looks exactly like "clicked clear
+                // all, but that one row didn't clear." Blurring flushes any focused cell's edit
+                // immediately (its onBlur handler saves it right away instead of waiting out its
+                // own debounce — at most one cell can have unsaved input at a time, since moving
+                // focus to type anywhere else always blurs it first), and waiting for the shared
+                // mutation cache to drain then guarantees the bulk clear is always the LAST write
+                // for every row, including one that's since scrolled out of view.
+                (document.activeElement as HTMLElement | null)?.blur?.();
+                await waitForPrMutationsToSettle(queryClient);
                 clearAllPrMutation.mutate();
               }}
             >
@@ -765,7 +815,7 @@ export default function ItemsTable({
 
         {selectedItemId != null && (
           <ErrorBoundary
-            key={selectedItemId}
+            resetKey={selectedItemId}
             fallback={
               <aside className="detail-panel">
                 <div className="detail-panel-header">

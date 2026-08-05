@@ -37,12 +37,19 @@ export function urgencyLabel(triggerMonth: number): { label: string; tone: Urgen
   return { label: "ยังไม่จำเป็น", tone: "ok" };
 }
 
-/** % change of the newer half of a 6-month window vs the older half. */
+/**
+ * % change of the newer half of a 6-month window vs the older half. Mirrors backend
+ * computeTrend()'s exact-zero-baseline rule: an all-zero older half has no real percentage to
+ * report (it isn't "infinite growth"), so it's 0, matching the backend's unconditional FLAT
+ * classification for that case — returning 100 here used to produce self-contradicting text
+ * like "ทรงตัว (+100.0%)" and a spurious "เทรนด์ขาขึ้น" suggestion on an item the table itself
+ * correctly shows as FLAT.
+ */
 export function trendPercent(hist6: number[]): number {
   const old3 = average(hist6.slice(0, 3));
   const new3 = average(hist6.slice(3, 6));
   if (old3 > 0) return ((new3 - old3) / old3) * 100;
-  return new3 > 0 ? 100 : 0;
+  return 0;
 }
 
 /** Deviation of each of the 6 months from AVG/M (the 12-month average) — NOT from hist6's own mean. */
@@ -110,6 +117,10 @@ export interface ItemAnalysis {
   next: number[];
   triggerMonth: number;
   orderQty: number;
+  /** orderQty rounded up to the item's packing-unit multiple (server-computed prQtySuggested),
+   *  when one applies — this is the quantity that should actually be purchased/shown to the
+   *  user, vs. orderQty's raw pre-rounding math. */
+  recommendedOrderQty: number;
   urgency: { label: string; tone: Urgency };
   triggerValue: number | null;
   triggerMonthLabel: string;
@@ -135,12 +146,17 @@ export function analyzeItem(item: ItemDetail): ItemAnalysis {
 
   const { triggerMonth, orderQty } = findTrigger(next, item.sumMin);
   const triggerValue = triggerMonth > 0 ? next[triggerMonth - 1] : null;
+  // prQtySuggested is the backend's orderQty already rounded up to the item's packing-unit
+  // multiple (see backend applyPackingRule) — falls back to the raw orderQty when the item has
+  // no active packing rule, since the backend then stores them equal.
+  const recommendedOrderQty = item.prQtySuggested ?? orderQty;
 
   return {
     hist6,
     next,
     triggerMonth,
     orderQty,
+    recommendedOrderQty,
     urgency: urgencyLabel(triggerMonth),
     triggerValue,
     triggerMonthLabel: triggerMonth > 0 ? thaiMonthLabel(triggerMonth) : "-",
@@ -151,7 +167,7 @@ export function analyzeItem(item: ItemDetail): ItemAnalysis {
     max: maxMonth(hist6),
     min: minMonth(hist6),
     daysToOrder: mustOrderByDays(triggerMonth, item.leadTimeDays),
-    estimatedValue: orderQty * (item.purchasePrice ?? 0),
+    estimatedValue: recommendedOrderQty * (item.purchasePrice ?? 0),
     belowMinCount:
       item.sumMin != null && item.sumMin > 0 ? next.filter((v) => v < (item.sumMin ?? 0)).length : 0,
   };

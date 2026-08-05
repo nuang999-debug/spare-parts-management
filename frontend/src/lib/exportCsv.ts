@@ -32,7 +32,10 @@ const HEADER = [
 
 function csvCell(v: string | number | null | undefined): string {
   const s = v == null ? "" : String(v);
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  // A bare \r (no paired \n) used to slip through unquoted — some CSV parsers treat a lone \r as
+  // its own line terminator, so an unquoted one would split a cell's text into a spurious extra
+  // row when opened elsewhere, even though this file's own line joins always use \r\n.
+  return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
 /** Mirrors the original app's exportCSV() — exports the currently filtered/sorted rows, UTF-8 BOM. */

@@ -3,6 +3,10 @@ import { Component, type ErrorInfo, type ReactNode } from "react";
 interface Props {
   children: ReactNode;
   fallback: ReactNode;
+  // Recovers the boundary when this changes (e.g. pass the current item id) — compared as a
+  // plain prop, NOT React's `key`, so switching it doesn't remount `children` and wipe out any
+  // local state the child was holding (like a resized/collapsed panel width).
+  resetKey?: unknown;
 }
 
 interface State {
@@ -30,7 +34,7 @@ export default class ErrorBoundary extends Component<Props, State> {
   componentDidUpdate(prevProps: Props) {
     // Give the panel a chance to recover once its underlying data changes again (e.g. switching
     // to a different item) instead of staying stuck on the fallback forever.
-    if (this.state.hasError && prevProps.children !== this.props.children) {
+    if (this.state.hasError && prevProps.resetKey !== this.props.resetKey) {
       this.setState({ hasError: false });
     }
   }

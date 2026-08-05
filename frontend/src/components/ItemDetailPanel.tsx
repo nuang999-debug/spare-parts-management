@@ -30,6 +30,12 @@ const TOOLTIP_STYLE = {
   fontSize: 12,
   color: "#e2e8f0",
 };
+// Recharts sets each tooltip row's own inline color (defaulting to black, meant to match a
+// multi-series legend) regardless of `contentStyle`'s color above — on this dark tooltip
+// background that left every number invisible. `itemStyle`/`labelStyle` are the props that
+// actually reach those inner elements.
+const TOOLTIP_ITEM_STYLE = { color: TOOLTIP_STYLE.color };
+const TOOLTIP_LABEL_STYLE = { color: TOOLTIP_STYLE.color };
 const AXIS_TICK = { fontSize: 11, fill: CHART_MUTED };
 const NEXT_LETTERS = ["BH", "BI", "BJ", "BK", "BL"];
 
@@ -288,7 +294,12 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
                       tickFormatter={(v: number) => thaiMonthLabel(v - 12)}
                     />
                     <YAxis tick={AXIS_TICK} />
-                    <Tooltip contentStyle={TOOLTIP_STYLE} labelFormatter={(v) => thaiMonthLabel(Number(v) - 12)} />
+                    <Tooltip
+                      contentStyle={TOOLTIP_STYLE}
+                      itemStyle={TOOLTIP_ITEM_STYLE}
+                      labelStyle={TOOLTIP_LABEL_STYLE}
+                      labelFormatter={(v) => thaiMonthLabel(Number(v) - 12)}
+                    />
                     <Area
                       type="monotone"
                       dataKey="qty"
@@ -308,7 +319,12 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
                     <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} />
                     <XAxis dataKey="label" tick={AXIS_TICK} />
                     <YAxis tick={AXIS_TICK} />
-                    <Tooltip contentStyle={TOOLTIP_STYLE} />
+                    <Tooltip
+                      contentStyle={TOOLTIP_STYLE}
+                      itemStyle={TOOLTIP_ITEM_STYLE}
+                      labelStyle={TOOLTIP_LABEL_STYLE}
+                      formatter={(v) => (typeof v === "number" ? v.toFixed(2) : v)}
+                    />
                     <Bar dataKey="value" activeBar={false} isAnimationActive={false}>
                       {forecastChartData.map((d, i) => (
                         <Cell key={i} fill={item.sumMin != null && d.value < item.sumMin ? CHART_DANGER : CHART_ACCENT3} />
@@ -328,7 +344,7 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
                     <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} />
                     <XAxis dataKey="year" tick={AXIS_TICK} />
                     <YAxis tick={AXIS_TICK} />
-                    <Tooltip contentStyle={TOOLTIP_STYLE} />
+                    <Tooltip contentStyle={TOOLTIP_STYLE} itemStyle={TOOLTIP_ITEM_STYLE} labelStyle={TOOLTIP_LABEL_STYLE} />
                     <Bar dataKey="qty" fill={CHART_ACCENT} activeBar={false} isAnimationActive={false} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -413,8 +429,10 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
                   <div className="plan-kpis">
                     <div className="kpi">
                       <span className="kpi-label">จำนวนที่ควรสั่ง</span>
-                      <span className={`kpi-value tone-${a.urgency.tone}`}>{fmtN(a.orderQty, 0)}</span>
-                      <span className="kpi-sub">หน่วย</span>
+                      <span className={`kpi-value tone-${a.urgency.tone}`}>{fmtN(a.recommendedOrderQty, 0)}</span>
+                      <span className="kpi-sub">
+                        หน่วย{item.packingRule?.active ? ` (คูณของ ${item.packingRule.multipleOf})` : ""}
+                      </span>
                     </div>
                     <div className="kpi">
                       <span className="kpi-label">เดือนที่ Stock ต่ำกว่า MIN</span>

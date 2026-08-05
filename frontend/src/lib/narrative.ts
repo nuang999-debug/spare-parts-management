@@ -131,12 +131,24 @@ export function buildNarrative(item: ItemDetail, a: ItemAnalysis): NarrativeSect
       t(` เริ่มตั้งแต่ ${a.triggerMonthLabel} หากไม่ดำเนินการจะขาดสต็อกต่อเนื่อง`),
     ];
   } else {
-    riskRuns = [
-      b("ความเสี่ยงปานกลางถึงสูง", "var(--warning)"),
-      t(` — Stock จะตกลงต่ำกว่า Sum MIN (${fmt(sumMin, 0)}) ตั้งแต่เดือน `),
-      b(a.triggerMonthLabel),
-      t(` เป็นต้นไป (รวม ${belowCount}/5 เดือนที่ต่ำกว่าเกณฑ์)`),
-    ];
+    // next[] is a running total that can climb back above Sum MIN if a PO receipt lands in a
+    // later bucket, so a below-MIN month doesn't guarantee every month after it stays below too
+    // — "ตั้งแต่เดือน X เป็นต้นไป" (continuously from month X onward) would misstate that as fact
+    // whenever there's a recovery-then-dip in between. Only claim continuity when it's real.
+    const isContinuousFromTrigger = a.next.slice(a.triggerMonth - 1).every((v) => v < sumMin);
+    riskRuns = isContinuousFromTrigger
+      ? [
+          b("ความเสี่ยงปานกลางถึงสูง", "var(--warning)"),
+          t(` — Stock จะตกลงต่ำกว่า Sum MIN (${fmt(sumMin, 0)}) ตั้งแต่เดือน `),
+          b(a.triggerMonthLabel),
+          t(` เป็นต้นไป (รวม ${belowCount}/5 เดือนที่ต่ำกว่าเกณฑ์)`),
+        ]
+      : [
+          b("ความเสี่ยงปานกลางถึงสูง", "var(--warning)"),
+          t(` — Stock จะตกลงต่ำกว่า Sum MIN (${fmt(sumMin, 0)}) ในบางช่วง เริ่มที่เดือน `),
+          b(a.triggerMonthLabel),
+          t(` (รวม ${belowCount}/5 เดือนที่ต่ำกว่าเกณฑ์ ไม่ต่อเนื่องกันทั้งหมด เนื่องจากมี PO เข้าคั่นกลาง)`),
+        ];
   }
   section2.push({ kind: "para", runs: riskRuns });
   if (item.backorderQty > item.stockQty) {
@@ -164,13 +176,17 @@ export function buildNarrative(item: ItemDetail, a: ItemAnalysis): NarrativeSect
   } else {
     section3.push({
       kind: "para",
-      runs: [b("ควรพิจารณาสั่งซื้อ", "var(--danger)"), t(" จำนวนประมาณ "), b(`${fmtN(a.orderQty, 0)} หน่วย`)],
+      runs: [b("ควรพิจารณาสั่งซื้อ", "var(--danger)"), t(" จำนวนประมาณ "), b(`${fmtN(a.recommendedOrderQty, 0)} หน่วย`)],
     });
+    const roundedForPacking = item.packingRule?.active && a.recommendedOrderQty !== a.orderQty;
     section3.push({
       kind: "para",
       runs: [
         t(
-          `คำนวณจาก: Sum MIN (${fmt(sumMin, 0)}) − Stock คาดการณ์เดือน ${a.triggerMonthLabel} (${fmtN(a.triggerValue, 1)}) = ${fmtN(a.orderQty, 0)} หน่วย`
+          `คำนวณจาก: Sum MIN (${fmt(sumMin, 0)}) − Stock คาดการณ์เดือน ${a.triggerMonthLabel} (${fmtN(a.triggerValue, 1)}) = ${fmtN(a.orderQty, 0)} หน่วย` +
+            (roundedForPacking
+              ? ` → ปัดขึ้นเป็น ${fmtN(a.recommendedOrderQty, 0)} หน่วย ตามกฎบรรจุภัณฑ์ (คูณของ ${item.packingRule!.multipleOf})`
+              : "")
         ),
       ],
     });
@@ -368,8 +384,8 @@ export function buildNarrative(item: ItemDetail, a: ItemAnalysis): NarrativeSect
       `Sum MIN ปัจจุบัน (${fmt(sumMin, 0)}) ต่ำกว่า Old MIN เดิม (${fmt(oldMin, 0)}) มากกว่า 30% หากการใช้งานยังสูงอยู่ ควรพิจารณาทบทวน MIN อีกครั้ง`
     );
   }
-  if ((item.purchasePrice ?? 0) > 0 && a.orderQty > 0) {
-    const orderValue = a.orderQty * (item.purchasePrice ?? 0);
+  if ((item.purchasePrice ?? 0) > 0 && a.recommendedOrderQty > 0) {
+    const orderValue = a.recommendedOrderQty * (item.purchasePrice ?? 0);
     if (orderValue > 50000) {
       otherNotes.push(`มูลค่าการสั่งซื้อที่แนะนำค่อนข้างสูง (฿${money(orderValue)}) ควรขออนุมัติงบประมาณล่วงหน้า`);
     }

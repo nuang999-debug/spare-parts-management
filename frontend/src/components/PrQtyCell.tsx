@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { updateItemPr, type ItemListRow } from "../api/items";
 
@@ -12,12 +12,14 @@ export default function PrQtyCell({
   onNavigate,
   onNavigateColumn,
   inputRef,
+  clearSignal,
 }: {
   item: ItemListRow;
   onFocusRow?: () => void;
   onNavigate?: (direction: 1 | -1) => void;
   onNavigateColumn?: (direction: 1 | -1) => void;
   inputRef?: (el: HTMLInputElement | null) => void;
+  clearSignal?: number;
 }) {
   const [value, setValue] = useState(displayValue(item.prQtyCurrent));
   const queryClient = useQueryClient();
@@ -26,16 +28,44 @@ export default function PrQtyCell({
     setValue(displayValue(item.prQtyCurrent));
   }, [item.prQtyCurrent]);
 
+  // "Clear all PR" is a separate bulk action from this cell's own debounced auto-save. Without
+  // this, a pending edit (typing a new value, or backspacing one to empty) whose 400ms timer
+  // hasn't fired yet survives a "clear all" click untouched — the timer only reads `value` and
+  // `item.prQtyCurrent` when it eventually fires, and if the bulk clear's own refetch hasn't
+  // landed on this cell's props yet at that moment, commit() sees stale (still non-null) data
+  // and saves right over the just-cleared value. Comparing the clearSignal captured when the
+  // timer was SCHEDULED against its latest value when the timer FIRES catches this regardless of
+  // what the local text happens to be — unlike snapshotting/resetting `value` itself, which is a
+  // no-op (and so doesn't help) when the pending edit was already blank.
+  const clearSignalRef = useRef(clearSignal);
+  useEffect(() => {
+    clearSignalRef.current = clearSignal;
+  }, [clearSignal]);
+
   // Auto-saves shortly after each keystroke — the KPI bar and other rows' figures that read
   // this value pick it up without waiting for blur/Enter/arrow-nav. Debounced (not per-keystroke)
   // so typing "123" saves once, not three times with three audit-log entries.
   useEffect(() => {
-    const timer = setTimeout(() => commit(), 400);
+    const signalAtScheduleTime = clearSignalRef.current;
+    const timer = setTimeout(() => {
+      if (clearSignalRef.current !== signalAtScheduleTime) {
+        setValue(displayValue(item.prQtyCurrent)); // abandon — a bulk clear landed in between
+        return;
+      }
+      commit();
+    }, 400);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
   const mutation = useMutation({
+    // Shared across every PrQtyCell instance so "clear all PR" can check
+    // queryClient.isMutating({ mutationKey: ["updateItemPr"] }) and wait for any in-flight edit to
+    // land before it runs — a query-client-level check, not tied to any one component's lifetime,
+    // so it still works correctly for a row that's scrolled out of view and unmounted mid-request
+    // (this table is virtualized — a per-component onMutate/onSettled callback pair would silently
+    // stop firing the moment its row unmounts, even though the underlying request keeps running).
+    mutationKey: ["updateItemPr"],
     mutationFn: (newPrQty: number) => updateItemPr(item.id, newPrQty),
     onSuccess: (updated) => {
       queryClient.setQueryData<ItemListRow[]>(["items"], (prev) =>
