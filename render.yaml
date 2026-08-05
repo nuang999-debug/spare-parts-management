@@ -8,7 +8,11 @@ services:
     # build step too, and npm's default behavior is to skip devDependencies (typescript, every
     # @types/* package) whenever NODE_ENV=production is set — even though tsc needs them to
     # compile. Without this flag the build fails with "Cannot find module 'express'" etc.
-    buildCommand: npm install --include=dev && npx prisma generate && npx prisma migrate deploy && npm run build
+    # Seeding after migrate deploy creates the first admin user (username "admin", password
+    # "ChangeMe123!" unless SEED_ADMIN_USERNAME/SEED_ADMIN_PASSWORD env vars override it) and the
+    # 6 packing-unit rules — uses upsert throughout, so safe to run on every deploy, not just the
+    # first one.
+    buildCommand: npm install --include=dev && npx prisma generate && npx prisma migrate deploy && npm run seed && npm run build
     startCommand: npm start
     envVars:
       - key: DATABASE_URL
