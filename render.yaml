@@ -33,8 +33,12 @@ services:
     buildCommand: npm install && npm run build
     staticPublishPath: dist
     envVars:
+      # Render appended a random suffix to the real backend hostname (the bare
+      # "spareparts-backend.onrender.com" was already taken by another account) — confirmed via
+      # the actual provisioned service page. Must match exactly or every API call from the
+      # frontend silently goes nowhere.
       - key: VITE_API_BASE_URL
-        value: https://spareparts-backend.onrender.com
+        value: https://spareparts-backend-jqjc.onrender.com
     routes:
       - type: rewrite
         source: /*
