@@ -31,6 +31,12 @@ const TOOLTIP_STYLE = {
   fontSize: 12,
   color: "#e2e8f0",
 };
+// Recharts sets each tooltip row's own inline color (defaulting to black, meant to match a
+// multi-series legend) regardless of `contentStyle`'s color above — on this dark tooltip
+// background that left every number invisible. `itemStyle`/`labelStyle` are the props that
+// actually reach those inner elements.
+const TOOLTIP_ITEM_STYLE = { color: TOOLTIP_STYLE.color };
+const TOOLTIP_LABEL_STYLE = { color: TOOLTIP_STYLE.color };
 const AXIS_TICK = { fontSize: 11, fill: CHART_MUTED };
 
 function fmt(n: number, digits = 0): string {
@@ -118,6 +124,12 @@ export default function SummaryTab({ onGoToItem }: { onGoToItem: (itemNoRaw: str
     contItems,
     discItems,
   } = summary;
+
+  // Single source of truth for "increased + brand-new SUM MIN" rows — used by the on-screen
+  // list, its overflow count, and both export buttons, so all three can never disagree about
+  // which rows are actually included (a mismatch here was the exact bug already found twice:
+  // once between the screen and the export, once between the screen and its own overflow count).
+  const increasedWithNew = increased.concat(newItems);
 
   const trendTotal = upTrend + downTrend + flatTrend;
   const donutData = [
@@ -210,7 +222,7 @@ export default function SummaryTab({ onGoToItem }: { onGoToItem: (itemNoRaw: str
                         <Cell key={i} fill={d.color} />
                       ))}
                     </Pie>
-                    <Tooltip contentStyle={TOOLTIP_STYLE} />
+                    <Tooltip contentStyle={TOOLTIP_STYLE} itemStyle={TOOLTIP_ITEM_STYLE} labelStyle={TOOLTIP_LABEL_STYLE} />
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="donut-legend">
@@ -238,7 +250,12 @@ export default function SummaryTab({ onGoToItem }: { onGoToItem: (itemNoRaw: str
                 <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} />
                 <XAxis dataKey="label" tick={AXIS_TICK} />
                 <YAxis tick={AXIS_TICK} />
-                <Tooltip contentStyle={TOOLTIP_STYLE} />
+                <Tooltip
+                  contentStyle={TOOLTIP_STYLE}
+                  itemStyle={TOOLTIP_ITEM_STYLE}
+                  labelStyle={TOOLTIP_LABEL_STYLE}
+                  formatter={(v) => (typeof v === "number" ? v.toFixed(2) : v)}
+                />
                 {sumMinTotal > 0 && (
                   <ReferenceLine y={sumMinTotal} stroke={RED} strokeDasharray="4 4" label="SUM MIN" />
                 )}
@@ -371,7 +388,11 @@ export default function SummaryTab({ onGoToItem }: { onGoToItem: (itemNoRaw: str
       <div className="sum-sec">
         <div className="sum-sec-hd">
           <span>📋 ส่งออกรายการ SUM MIN ที่เปลี่ยนแปลง</span>
-          <button type="button" className="sum-export-btn" onClick={() => exportSumMinChangeExcel(increased, decreased)}>
+          <button
+            type="button"
+            className="sum-export-btn"
+            onClick={() => exportSumMinChangeExcel(increasedWithNew, decreased)}
+          >
             ⬇ Export Excel ทั้งหมด (2 sheets)
           </button>
         </div>
@@ -383,7 +404,11 @@ export default function SummaryTab({ onGoToItem }: { onGoToItem: (itemNoRaw: str
             <span>
               📈 SUM MIN เพิ่มขึ้น (BC &gt; BB) — {fmt(increased.length)} รายการ (ใหม่ {fmt(newItems.length)})
             </span>
-            <button type="button" className="sum-export-btn" onClick={() => exportSumMinSheet("up", increased)}>
+            <button
+              type="button"
+              className="sum-export-btn"
+              onClick={() => exportSumMinSheet("up", increasedWithNew)}
+            >
               ⬇ Excel
             </button>
           </div>
@@ -393,15 +418,12 @@ export default function SummaryTab({ onGoToItem }: { onGoToItem: (itemNoRaw: str
                 NEW (BB=0→BC&gt;0): {fmt(newItems.length)} รายการ
               </div>
             )}
-            {increased
-              .concat(newItems)
-              .slice(0, 120)
-              .map((d, i) => (
-                <ChangeRowLine row={d} isUp onGoToItem={onGoToItem} key={i} />
-              ))}
-            {increased.length > 120 && (
+            {increasedWithNew.slice(0, 120).map((d, i) => (
+              <ChangeRowLine row={d} isUp onGoToItem={onGoToItem} key={i} />
+            ))}
+            {increasedWithNew.length > 120 && (
               <div style={{ fontSize: "0.625rem", color: "var(--text-muted)", padding: "0.3rem 0" }}>
-                ...+{increased.length - 120} รายการ
+                ...+{increasedWithNew.length - 120} รายการ
               </div>
             )}
           </div>

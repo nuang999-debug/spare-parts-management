@@ -1,4 +1,4 @@
-import type { ItemListRow } from "../api/items";
+import type { CalcTrend, ItemListRow, ItemUsageHistoryRow } from "../api/items";
 
 export interface ChangeRow {
   itemNoRaw: string;
@@ -14,6 +14,10 @@ export interface ChangeRow {
   purchasePrice: number | null;
   forModel: string | null;
   diff: number;
+  calcTrend: CalcTrend | null;
+  /** Last 6 months only (monthIndex 6-11 / M-6..M-1), same window the Excel export splits into
+   *  per-month columns and derives the trend % from — matches ItemListRow's own scope. */
+  usageHistory: ItemUsageHistoryRow[];
 }
 
 export interface SummaryData {
@@ -57,6 +61,8 @@ function toChangeRow(d: ItemListRow): ChangeRow {
     purchasePrice: d.purchasePrice,
     forModel: d.forModel,
     diff: (d.sumMin ?? 0) - (d.oldMin ?? 0),
+    calcTrend: d.calcTrend,
+    usageHistory: d.usageHistory,
   };
 }
 
