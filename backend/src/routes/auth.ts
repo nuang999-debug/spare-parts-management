@@ -7,6 +7,13 @@ import { HttpError } from "../middleware/errorHandler";
 
 export const authRouter = Router();
 
+// A bcrypt.compare against a real hash takes ~50-100ms; skipping it entirely when the username
+// doesn't exist made that request return almost instantly, letting an attacker enumerate valid
+// usernames purely from response timing even though the error message itself never differs.
+// Comparing against this hash (of an arbitrary, unrelated string) whenever there's no real user
+// keeps the cost — and therefore the timing — the same on both paths.
+const DUMMY_HASH = "$2b$12$QHKj7AdoGPtBEnwYiw6dEe.ZEnV6q375B8LoM14WDIpKA2LJYsZl2";
+
 const loginSchema = z.object({
   username: z.string().min(1),
   password: z.string().min(1),
@@ -51,7 +58,7 @@ authRouter.post("/login", async (req, res, next) => {
     const { username, password } = loginSchema.parse(req.body);
     const user = await prisma.user.findUnique({ where: { username } });
 
-    const passwordOk = user ? await verifyPassword(password, user.passwordHash) : false;
+    const passwordOk = await verifyPassword(password, user?.passwordHash ?? DUMMY_HASH);
     const success = Boolean(user && user.isActive && passwordOk);
 
     await recordLogin({
@@ -70,6 +77,7 @@ authRouter.post("/login", async (req, res, next) => {
       req.session.regenerate((err) => (err ? reject(err) : resolve()));
     });
     req.session.userId = user.id;
+    req.session.passwordChangedAt = user.passwordChangedAt?.getTime() ?? null;
 
     res.json(toSafeUser(user));
   } catch (err) {
@@ -105,11 +113,19 @@ authRouter.post("/change-password", requireAuth, async (req, res, next) => {
     if (!ok) {
       throw new HttpError(401, "Current password is incorrect");
     }
+    if (currentPassword === newPassword) {
+      throw new HttpError(400, "New password must be different from the current password");
+    }
     const passwordHash = await hashPassword(newPassword);
+    const passwordChangedAt = new Date();
     await prisma.user.update({
       where: { id: user.id },
-      data: { passwordHash, mustChangePassword: false },
+      data: { passwordHash, mustChangePassword: false, passwordChangedAt },
     });
+    // Every OTHER open session for this user now fails requireAuth's stamp check on its next
+    // request — but THIS session must keep working (the user is still using it right now), so
+    // its own snapshot needs to move forward to match what was just written.
+    req.session.passwordChangedAt = passwordChangedAt.getTime();
     res.status(204).end();
   } catch (err) {
     next(err);

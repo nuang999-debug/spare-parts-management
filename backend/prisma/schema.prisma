@@ -49,6 +49,10 @@ model User {
   role               Role            @default(USER)
   isActive           Boolean         @default(true)
   mustChangePassword Boolean         @default(false)
+  // Stamped on every password change (self-service or admin reset) and copied into the session
+  // at login time — requireAuth compares the two so a session issued before the password last
+  // changed is destroyed on its very next request, the same way deactivation already works.
+  passwordChangedAt  DateTime?
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt
 

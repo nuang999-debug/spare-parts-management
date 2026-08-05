@@ -90,12 +90,23 @@ usersRouter.patch("/:id", async (req, res, next) => {
       const existing = await tx.user.findUnique({ where: { id } });
       if (!existing) throw new HttpError(404, "User not found");
 
-      const updateData: { role?: "ADMIN" | "USER"; isActive?: boolean; passwordHash?: string; mustChangePassword?: boolean } = {};
+      const updateData: {
+        role?: "ADMIN" | "USER";
+        isActive?: boolean;
+        passwordHash?: string;
+        mustChangePassword?: boolean;
+        passwordChangedAt?: Date;
+      } = {};
       if (data.role !== undefined) updateData.role = data.role;
       if (data.isActive !== undefined) updateData.isActive = data.isActive;
       if (data.resetPassword !== undefined) {
         updateData.passwordHash = await hashPassword(data.resetPassword);
         updateData.mustChangePassword = true;
+        // Kills any session the user currently has open with the old password, same as
+        // self-service change-password does — an admin-initiated reset is exactly the case
+        // where the user may be locked out of their own session already, so this must not
+        // depend on them re-authenticating first.
+        updateData.passwordChangedAt = new Date();
       }
 
       const result = await tx.user.update({ where: { id }, data: updateData, select: SAFE_SELECT });

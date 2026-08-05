@@ -24,9 +24,7 @@ export default function EditHistory() {
           {(data ?? []).map((entry) => (
             <tr key={entry.id}>
               <td>{new Date(entry.changedAt).toLocaleString()}</td>
-              <td>
-                {entry.entityType} #{entry.entityId}
-              </td>
+              <td>{entry.entityLabel ?? `${entry.entityType} #${entry.entityId}`}</td>
               <td>{entry.fieldName}</td>
               <td>{entry.oldValue ?? "-"}</td>
               <td>{entry.newValue ?? "-"}</td>

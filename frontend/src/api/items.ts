@@ -72,6 +72,10 @@ export interface ItemHistoryEntry {
   changedAt: string;
   note: string | null;
   changedBy: { displayName: string; username: string };
+  /** Only present on the cross-entity /audit/edit-history feed — a human-readable
+   * "<item code> — <description>" / "<display name> (<username>)" in place of the raw
+   * entityId, since that feed spans multiple item/user rows the reader can't otherwise place. */
+  entityLabel?: string;
 }
 
 export function listItems(): Promise<ItemListRow[]> {

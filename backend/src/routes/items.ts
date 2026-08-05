@@ -87,7 +87,7 @@ itemsRouter.get("/:id", async (req, res, next) => {
   }
 });
 
-const prEditSchema = z.object({ newPrQty: z.number().min(0) });
+const prEditSchema = z.object({ newPrQty: z.number().finite().min(0) });
 
 itemsRouter.patch("/:id/pr", async (req, res, next) => {
   try {

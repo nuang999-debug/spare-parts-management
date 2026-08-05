@@ -23,7 +23,7 @@ packingRulesRouter.get("/", async (_req, res, next) => {
   }
 });
 
-const createSchema = z.object({ itemNo: z.string().min(1), multipleOf: z.number().int().positive() });
+const createSchema = z.object({ itemNo: z.string().min(1), multipleOf: z.number().int().positive().max(100_000, "multipleOf is unreasonably large") });
 
 packingRulesRouter.post("/", async (req, res, next) => {
   try {
@@ -62,7 +62,7 @@ packingRulesRouter.post("/", async (req, res, next) => {
 });
 
 const updateSchema = z.object({
-  multipleOf: z.number().int().positive().optional(),
+  multipleOf: z.number().int().positive().max(100_000, "multipleOf is unreasonably large").optional(),
   active: z.boolean().optional(),
 });
 
@@ -171,7 +171,7 @@ packingRulesRouter.post("/recalculate", async (req, res, next) => {
       }
 
       return { changedCount };
-    });
+    }, { timeout: 10 * 60_000, maxWait: 15_000 });
 
     res.json(result);
   } catch (err) {
