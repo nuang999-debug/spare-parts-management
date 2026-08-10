@@ -13,6 +13,7 @@ export interface ChangeRow {
   stockQty: number;
   purchasePrice: number | null;
   forModel: string | null;
+  remark: string | null;
   diff: number;
   calcTrend: CalcTrend | null;
   /** Last 6 months only (monthIndex 6-11 / M-6..M-1), same window the Excel export splits into
@@ -60,6 +61,7 @@ function toChangeRow(d: ItemListRow): ChangeRow {
     stockQty: d.stockQty,
     purchasePrice: d.purchasePrice,
     forModel: d.forModel,
+    remark: d.remark,
     diff: (d.sumMin ?? 0) - (d.oldMin ?? 0),
     calcTrend: d.calcTrend,
     usageHistory: d.usageHistory,

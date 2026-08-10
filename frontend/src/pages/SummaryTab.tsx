@@ -16,7 +16,7 @@ import {
 } from "recharts";
 import { listItems, type ItemListRow } from "../api/items";
 import { buildSummaryData, calcMonthsToNormal, type ChangeRow } from "../lib/summary";
-import { exportSumMinChangeExcel, exportSumMinSheet } from "../lib/summaryExport";
+import { exportSumMinChangeExcel, exportSumMinSheet, exportUsageContinuitySheet } from "../lib/summaryExport";
 
 const CHART_MUTED = "#94a3b8";
 const CHART_GRID = "#263044";
@@ -353,8 +353,17 @@ export default function SummaryTab({ onGoToItem }: { onGoToItem: (itemNoRaw: str
 
         <div className="sum-sec">
           <div className="sum-sec-hd">
-            <span>✅ ใช้ต่อเนื่อง (≥3/6 เดือน)</span>
-            <span style={{ color: GREEN, fontFamily: "var(--font-mono)" }}>{fmt(contItems.length)} รายการ</span>
+            <span style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <span>✅ ใช้ต่อเนื่อง (≥3/6 เดือน)</span>
+              <span style={{ color: GREEN, fontFamily: "var(--font-mono)" }}>{fmt(contItems.length)} รายการ</span>
+            </span>
+            <button
+              type="button"
+              className="sum-export-btn"
+              onClick={() => exportUsageContinuitySheet("cont", contItems)}
+            >
+              ⬇ Excel
+            </button>
           </div>
           <div className="sum-sec-bd item-list" style={{ maxHeight: 260 }}>
             {contItems.slice(0, 100).map((d) => (
@@ -369,8 +378,17 @@ export default function SummaryTab({ onGoToItem }: { onGoToItem: (itemNoRaw: str
         </div>
         <div className="sum-sec">
           <div className="sum-sec-hd">
-            <span>⚠️ ใช้ไม่ต่อเนื่อง (&lt;3/6 เดือน)</span>
-            <span style={{ color: "var(--warning)", fontFamily: "var(--font-mono)" }}>{fmt(discItems.length)} รายการ</span>
+            <span style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <span>⚠️ ใช้ไม่ต่อเนื่อง (&lt;3/6 เดือน)</span>
+              <span style={{ color: "var(--warning)", fontFamily: "var(--font-mono)" }}>{fmt(discItems.length)} รายการ</span>
+            </span>
+            <button
+              type="button"
+              className="sum-export-btn"
+              onClick={() => exportUsageContinuitySheet("disc", discItems)}
+            >
+              ⬇ Excel
+            </button>
           </div>
           <div className="sum-sec-bd item-list" style={{ maxHeight: 260 }}>
             {discItems.slice(0, 100).map((d) => (

@@ -1,5 +1,6 @@
 import * as XLSX from "xlsx";
 import type { ChangeRow } from "./summary";
+import type { ItemListRow } from "../api/items";
 import { thaiMonthLabel } from "./thaiMonths";
 import { trendPercent } from "./analysis";
 
@@ -54,6 +55,7 @@ function changeRowsToSheetData(rows: ChangeRow[]) {
     "Stock ปัจจุบัน(BE)": r.stockQty,
     ...trendAndHistoryColumns(r),
     "Pur.Price": r.purchasePrice ?? "",
+    "Remark": r.remark ?? "",
     "For Model": r.forModel ?? "",
   }));
 }
@@ -76,6 +78,7 @@ export function exportSumMinSheet(type: "up" | "dn", rows: ChangeRow[]) {
     "Stock ปัจจุบัน(BE)": r.stockQty,
     ...trendAndHistoryColumns(r),
     "Pur.Price": r.purchasePrice ?? "",
+    "Remark": r.remark ?? "",
     "For Model": r.forModel ?? "",
     "Lead Time": r.leadTimeDays ?? "",
     "Vendor": r.vendor ?? "",
@@ -96,4 +99,60 @@ export function exportSumMinChangeExcel(increased: ChangeRow[], decreased: Chang
   XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(changeRowsToSheetData(increased)), "SUM MIN เพิ่มขึ้น");
   XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(changeRowsToSheetData(decreased)), "SUM MIN ลดลง");
   XLSX.writeFile(workbook, `SUM_MIN_เปลี่ยนแปลง_${todayStamp()}.xlsx`);
+}
+
+/** "ใช้ต่อเนื่อง/ไม่ต่อเนื่อง" lists are plain ItemListRow, not the ChangeRow shape above — this
+ *  mirrors changeRowsToSheetData's spirit (id/description + trend & 6-month history) but with
+ *  the columns that section actually shows (months-used-of-6, stock, stock value) instead of the
+ *  Old/Sum MIN change fields, which aren't what this section is about. */
+function usageRowsToSheetData(rows: ItemListRow[]) {
+  return rows.map((r) => {
+    const hist6 = r.usageHistory.map((h) => h.qty);
+    const nonZeroMonths = hist6.filter((q) => q > 0).length;
+    const monthly: Record<string, number | ""> = {};
+    HISTORY_LETTERS.forEach((letter, i) => {
+      const h = r.usageHistory[i];
+      monthly[`${letter} ${thaiMonthLabel(i - 6)}`] = h ? h.qty : "";
+    });
+    return {
+      "รหัส": r.itemNoRaw,
+      "ชื่ออะไหล่": r.description ?? "",
+      "Class": r.class ?? "",
+      "Category": r.category ?? "",
+      "ใช้กี่เดือน (จาก 6)": nonZeroMonths,
+      "เทรนด์": trendLabel(r.calcTrend),
+      "% เทรนด์ (6 เดือน)": hist6.length === 6 ? Math.round(trendPercent(hist6) * 10) / 10 : "",
+      "AVG/M": r.avgMonth ?? "",
+      ...monthly,
+      "Stock ปัจจุบัน(BE)": r.stockQty,
+      "มูลค่า Stock": r.stockQty * (r.purchasePrice ?? 0),
+      "Sum MIN(BC)": r.sumMin ?? "",
+      "Remark": r.remark ?? "",
+      "For Model": r.forModel ?? "",
+    };
+  });
+}
+
+/** Single-sheet export for just one direction (continuous or discontinuous usage). */
+export function exportUsageContinuitySheet(type: "cont" | "disc", rows: ItemListRow[]) {
+  if (!rows.length) {
+    alert("ไม่มีข้อมูลในส่วนนี้");
+    return;
+  }
+  const sheet = XLSX.utils.json_to_sheet(usageRowsToSheetData(rows));
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, sheet, type === "cont" ? "ใช้ต่อเนื่อง" : "ใช้ไม่ต่อเนื่อง");
+  XLSX.writeFile(workbook, `Usage_${type === "cont" ? "ต่อเนื่อง" : "ไม่ต่อเนื่อง"}_${todayStamp()}.xlsx`);
+}
+
+/** 2-sheet export covering both continuous and discontinuous usage at once. */
+export function exportUsageContinuityExcel(contItems: ItemListRow[], discItems: ItemListRow[]) {
+  if (!contItems.length && !discItems.length) {
+    alert("ยังไม่มีข้อมูล กรุณาไปหน้าสรุปภาพรวมก่อน");
+    return;
+  }
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(usageRowsToSheetData(contItems)), "ใช้ต่อเนื่อง");
+  XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(usageRowsToSheetData(discItems)), "ใช้ไม่ต่อเนื่อง");
+  XLSX.writeFile(workbook, `Usage_ต่อเนื่อง_${todayStamp()}.xlsx`);
 }
