@@ -1,14 +1,21 @@
 import { useQuery } from "@tanstack/react-query";
 import { listLoginHistory } from "../../api/audit";
+import { ApiError } from "../../api/client";
 
 export default function LoginHistory() {
-  const { data, isLoading } = useQuery({ queryKey: ["login-history"], queryFn: listLoginHistory });
+  const { data, isLoading, isError, error } = useQuery({ queryKey: ["login-history"], queryFn: listLoginHistory });
 
   if (isLoading) return <p>Loading...</p>;
 
   return (
     <div>
       <h2>Login history</h2>
+      {isError && <p className="import-error">{error instanceof ApiError ? error.message : "Failed to load login history"}</p>}
+      {data?.truncated && (
+        <p style={{ color: "var(--warning)" }}>
+          Showing the most recent 500 entries — older entries exist but aren't shown. Narrow the date range to see them.
+        </p>
+      )}
       <table>
         <thead>
           <tr>
@@ -21,7 +28,7 @@ export default function LoginHistory() {
           </tr>
         </thead>
         <tbody>
-          {(data ?? []).map((entry) => (
+          {(data?.rows ?? []).map((entry) => (
             <tr key={entry.id}>
               <td>{new Date(entry.createdAt).toLocaleString()}</td>
               <td>{entry.usernameAttempted}</td>

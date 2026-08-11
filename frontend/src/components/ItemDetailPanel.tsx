@@ -190,9 +190,9 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
           ["Vendor (K)", item.vendor ?? "-"],
           ["Pur. Price (I)", `฿${fmt(item.purchasePrice, 2)}`],
           ["Unit Cost (J)", item.unitCost != null ? `฿${fmt(item.unitCost, 2)}` : "-"],
-          ["PO N0 / M", fmt(item.poQty, 0)],
-          ["ST N0 / Q", fmt(item.stockQty, 0)],
-          ["BO QTY / Y", fmt(item.backorderQty, 0)],
+          ["PO N0 / M", fmtN(item.poQty, 0)],
+          ["ST N0 / Q", fmtN(item.stockQty, 0)],
+          ["BO QTY / Y", fmtN(item.backorderQty, 0)],
           ...item.yearlySales.map((y): [string, string] => [`${y.year}`, fmt(y.qty, 0)]),
           ...item.usageHistory.map((h): [string, string] => [
             `M-${12 - h.monthIndex} ${thaiMonthLabel(h.monthIndex - 12)}`,
@@ -218,6 +218,21 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
         return (
           <div className="detail-panel-body">
             <h1 className="detail-title">{item.description}</h1>
+            {item.isStale && (
+              <div
+                style={{
+                  margin: "0 0 0.75rem",
+                  padding: "0.5rem 0.7rem",
+                  background: "color-mix(in srgb, var(--warning) 12%, transparent)",
+                  border: "1px solid color-mix(in srgb, var(--warning) 30%, transparent)",
+                  borderRadius: 6,
+                  fontSize: "0.8rem",
+                  color: "var(--warning)",
+                }}
+              >
+                ⚠️ รายการนี้ไม่พบในไฟล์ import ล่าสุด — ตัวเลข Stock/คาดการณ์ด้านล่างอาจไม่เป็นปัจจุบัน
+              </div>
+            )}
             <div className="detail-chips">
               <span className="chip">
                 <span className="chip-label">รหัส</span>
@@ -242,20 +257,20 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
             <div className="detail-kpis">
               <div className="kpi">
                 <span className="kpi-label">PO N0 (BD=M)</span>
-                <span className="kpi-value" style={{ color: "var(--accent2)" }}>{fmt(item.poQty, 0)}</span>
-                <span className="kpi-sub">ช่อง M: {fmt(item.poQty, 0)}</span>
+                <span className="kpi-value" style={{ color: "var(--accent2)" }}>{fmtN(item.poQty, 0)}</span>
+                <span className="kpi-sub">ช่อง M: {fmtN(item.poQty, 0)}</span>
               </div>
               <div className="kpi">
                 <span className="kpi-label">Stock N0 (BE=Q)</span>
-                <span className="kpi-value" style={{ color: "var(--accent)" }}>{fmt(item.stockQty, 0)}</span>
-                <span className="kpi-sub">ช่อง Q: {fmt(item.stockQty, 0)}</span>
+                <span className="kpi-value" style={{ color: "var(--accent)" }}>{fmtN(item.stockQty, 0)}</span>
+                <span className="kpi-sub">ช่อง Q: {fmtN(item.stockQty, 0)}</span>
               </div>
               <div className="kpi">
                 <span className="kpi-label">Sale Order (BF=Y)</span>
                 <span className="kpi-value" style={{ color: "var(--warning)" }}>
-                  {fmt(item.backorderQty, 0)}
+                  {fmtN(item.backorderQty, 0)}
                 </span>
-                <span className="kpi-sub">ช่อง Y: {fmt(item.backorderQty, 0)}</span>
+                <span className="kpi-sub">ช่อง Y: {fmtN(item.backorderQty, 0)}</span>
               </div>
               <div className="kpi">
                 <span className="kpi-label">AVG/M (AW)</span>

@@ -12,7 +12,21 @@ import { commitPurchaseLinesImport } from "../../services/excelImport/commitPurc
 export const importRouter = Router();
 importRouter.use(requireAuth, requireRole("ADMIN"));
 
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } });
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 25 * 1024 * 1024 },
+  // The endpoint is already admin-only and the file never touches disk, but nothing stopped a
+  // non-Excel file (or the wrong extension entirely) from reaching XLSX.read() and failing with
+  // a confusing parser error instead of a clear "wrong file type" one at the door.
+  fileFilter: (_req, file, cb) => {
+    const isXlsx = /\.xlsx?$/i.test(file.originalname);
+    if (!isXlsx) {
+      cb(new HttpError(400, "Only .xlsx or .xls files are accepted"));
+      return;
+    }
+    cb(null, true);
+  },
+});
 
 /**
  * The "current month" reference point for bucketing PO due-dates must be frozen to whenever

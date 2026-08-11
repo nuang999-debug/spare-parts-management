@@ -16,7 +16,6 @@ import { loadLatestPoData, type PoBucketsMap } from "./poBuckets";
 import type { ParsedItemRow } from "./parseItemsRaw";
 
 const ITEM_CHUNK_SIZE = 500;
-const CHILD_ROW_CHUNK_SIZE = 3000;
 
 function chunk<T>(arr: T[], size: number): T[][] {
   const out: T[][] = [];
@@ -106,6 +105,31 @@ function computeItemData(
   };
 }
 
+/**
+ * Deliberately NOT one giant transaction wrapping all ~11K rows: that held every touched row's
+ * lock for the entire multi-minute import, blocking any concurrent PR-qty edit until the whole
+ * thing finished. Each ITEM_CHUNK_SIZE-row slice now commits on its own, so a lock is only ever
+ * held for one chunk's worth of writes (well under a second) instead of the full import.
+ *
+ * Each chunk's transaction does everything for its own rows — reads the current prQtyCurrent/
+ * prIsOverride, upserts the item, and replaces its usage/yearly history — all atomically:
+ *   - The PR snapshot is read fresh INSIDE this chunk's own transaction, not pre-fetched once for
+ *     the whole import before any chunk starts. An earlier version pre-fetched it upfront, which
+ *     opened a window where a user's PATCH /items/:id/pr committed *during* the import (after the
+ *     upfront snapshot but before that item's chunk ran) would get silently overwritten by the
+ *     stale snapshot's value — this chunk-local read closes that window; the only way a concurrent
+ *     edit is missed now is if it lands in the same instant this chunk's transaction is open,
+ *     which the transaction's row lock serializes correctly instead of racing.
+ *   - History delete+insert for a chunk's items happens in the SAME transaction as that chunk's
+ *     item upsert, not split into separate delete-phase/insert-phase transactions afterward — a
+ *     crash between those phases used to leave already-touched items with 0 history rows
+ *     permanently (until a repeat import). Now a crash mid-chunk rolls back that whole chunk
+ *     (item + its history together), leaving every previously-committed chunk fully consistent.
+ *
+ * The remaining trade-off: a mid-import failure leaves earlier chunks committed rather than
+ * rolling back the entire import — acceptable here because every write is a plain upsert keyed by
+ * itemNoNormalized, so simply re-running the same import is always safe and idempotent.
+ */
 export async function commitItemsImport(params: {
   rows: ParsedItemRow[];
   fileName: string;
@@ -113,33 +137,33 @@ export async function commitItemsImport(params: {
 }): Promise<{ importBatchId: number; rowCount: number }> {
   const { rows, fileName, uploadedById } = params;
 
-  return prisma.$transaction(
-    async (tx) => {
-      const batch = await tx.importBatch.create({
-        data: {
-          fileName,
-          fileType: "ITEMS_RAW",
-          uploadedById,
-          rowCount: rows.length,
-          status: "COMMITTED",
-        },
-      });
+  const batch = await prisma.importBatch.create({
+    data: {
+      fileName,
+      fileType: "ITEMS_RAW",
+      uploadedById,
+      rowCount: rows.length,
+      status: "COMMITTED",
+    },
+  });
 
-      const itemNos = rows.map((r) => r.itemNoNormalized);
+  const packingRules = await prisma.packingUnitRule.findMany({ where: { active: true } });
+  const packingRuleByNo = new Map(packingRules.map((r) => [r.itemNoNormalized, r]));
+
+  const { buckets: poBuckets, totals: poTotals } = await loadLatestPoData(prisma);
+  const now = new Date();
+
+  for (const rowChunk of chunk(rows, ITEM_CHUNK_SIZE)) {
+    await prisma.$transaction(async (tx) => {
+      const chunkItemNos = rowChunk.map((r) => r.itemNoNormalized);
       const existingItems = await tx.item.findMany({
-        where: { itemNoNormalized: { in: itemNos } },
+        where: { itemNoNormalized: { in: chunkItemNos } },
         select: { itemNoNormalized: true, prQtyCurrent: true, prIsOverride: true },
       });
       const existingByNo = new Map(existingItems.map((e) => [e.itemNoNormalized, e]));
 
-      const packingRules = await tx.packingUnitRule.findMany({ where: { active: true } });
-      const packingRuleByNo = new Map(packingRules.map((r) => [r.itemNoNormalized, r]));
-
-      const { buckets: poBuckets, totals: poTotals } = await loadLatestPoData(tx);
-      const now = new Date();
-
       const itemIdByNo = new Map<string, number>();
-      for (const row of rows) {
+      for (const row of rowChunk) {
         const existingPr = existingByNo.get(row.itemNoNormalized);
         const data = computeItemData(row, {
           existingPr,
@@ -175,29 +199,22 @@ export async function commitItemsImport(params: {
       }
 
       const touchedIds = [...itemIdByNo.values()];
-      for (const idChunk of chunk(touchedIds, ITEM_CHUNK_SIZE)) {
-        await tx.itemUsageHistory.deleteMany({ where: { itemId: { in: idChunk } } });
-        await tx.itemYearlySales.deleteMany({ where: { itemId: { in: idChunk } } });
-      }
+      await tx.itemUsageHistory.deleteMany({ where: { itemId: { in: touchedIds } } });
+      await tx.itemYearlySales.deleteMany({ where: { itemId: { in: touchedIds } } });
 
-      const usageRows = rows.flatMap((row) => {
+      const usageRows = rowChunk.flatMap((row) => {
         const itemId = itemIdByNo.get(row.itemNoNormalized)!;
         return row.usageHistory.map((h) => ({ itemId, monthIndex: h.monthIndex, periodLabel: h.periodLabel, qty: h.qty }));
       });
-      const yearlyRows = rows.flatMap((row) => {
+      const yearlyRows = rowChunk.flatMap((row) => {
         const itemId = itemIdByNo.get(row.itemNoNormalized)!;
         return row.yearlySales.map((y) => ({ itemId, year: y.year, qty: y.qty }));
       });
 
-      for (const c of chunk(usageRows, CHILD_ROW_CHUNK_SIZE)) {
-        await tx.itemUsageHistory.createMany({ data: c });
-      }
-      for (const c of chunk(yearlyRows, CHILD_ROW_CHUNK_SIZE)) {
-        await tx.itemYearlySales.createMany({ data: c });
-      }
+      await tx.itemUsageHistory.createMany({ data: usageRows });
+      await tx.itemYearlySales.createMany({ data: yearlyRows });
+    });
+  }
 
-      return { importBatchId: batch.id, rowCount: rows.length };
-    },
-    { timeout: 10 * 60_000, maxWait: 15_000 }
-  );
+  return { importBatchId: batch.id, rowCount: rows.length };
 }

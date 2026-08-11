@@ -11,10 +11,16 @@ export interface LoginHistoryEntry {
   user: { displayName: string; username: string } | null;
 }
 
-export function listLoginHistory(): Promise<LoginHistoryEntry[]> {
-  return request<LoginHistoryEntry[]>("/audit/login-history");
+export interface HistoryPage<T> {
+  rows: T[];
+  /** True when the server-side row cap (500) actually cut off older entries. */
+  truncated: boolean;
 }
 
-export function listEditHistory(): Promise<ItemHistoryEntry[]> {
-  return request<ItemHistoryEntry[]>("/audit/edit-history");
+export function listLoginHistory(): Promise<HistoryPage<LoginHistoryEntry>> {
+  return request<HistoryPage<LoginHistoryEntry>>("/audit/login-history");
+}
+
+export function listEditHistory(): Promise<HistoryPage<ItemHistoryEntry>> {
+  return request<HistoryPage<ItemHistoryEntry>>("/audit/edit-history");
 }

@@ -74,6 +74,11 @@ describe("computeStatus", () => {
     const next = computeNextForecast(STOCK_QTY, [PO_QTY, 0, 0, 0, 0], avgMonth);
     expect(computeStatus(next[0], next[1], SUM_MIN)).toBe("OK");
   });
+
+  it("stays OK even with a negative forecast when no Sum MIN is set", () => {
+    expect(computeStatus(-5, 10, null)).toBe("OK");
+    expect(computeStatus(-5, -10, 0)).toBe("OK");
+  });
 });
 
 describe("computeSuggestedOrder", () => {

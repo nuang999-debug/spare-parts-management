@@ -11,7 +11,7 @@ import { ApiError } from "../../api/client";
 
 export default function PackingRules() {
   const queryClient = useQueryClient();
-  const { data: rules, isLoading } = useQuery({ queryKey: ["packing-rules"], queryFn: listPackingRules });
+  const { data: rules, isLoading, isError, error: listError } = useQuery({ queryKey: ["packing-rules"], queryFn: listPackingRules });
 
   const [itemNo, setItemNo] = useState("");
   const [multipleOf, setMultipleOf] = useState("");
@@ -99,6 +99,9 @@ export default function PackingRules() {
         </p>
       )}
       {recalcMessage && <p className="import-success">{recalcMessage}</p>}
+      {isError && (
+        <p className="import-error">{listError instanceof ApiError ? listError.message : "Failed to load packing rules"}</p>
+      )}
 
       <table>
         <thead>

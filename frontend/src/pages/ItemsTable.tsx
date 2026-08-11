@@ -126,6 +126,14 @@ const columns = [
     size: 120,
     filterFn: "includesString",
     meta: { filterType: "text" },
+    cell: (info) =>
+      info.row.original.isStale ? (
+        <span title="ไม่พบในไฟล์ import ล่าสุด — ข้อมูลนี้อาจไม่เป็นปัจจุบัน">
+          ⚠️ {info.getValue()}
+        </span>
+      ) : (
+        info.getValue()
+      ),
   }),
   columnHelper.accessor("description", {
     header: "ชื่ออะไหล่",
@@ -326,10 +334,15 @@ export default function ItemsTable({
 
   const zeroSumMinCount = useMemo(() => (items ?? []).filter((d) => (d.sumMin ?? 0) <= 0).length, [items]);
 
-  // Mirrors the original's applyF(): the BC=0 hide is skipped whenever ANY search/column
-  // filter is active, so searching for a known item code still finds it even if its Sum MIN
-  // isn't set yet — otherwise a real item can look "not found" purely because of this filter.
+  // The BC=0 hide is skipped only for the two free-text search columns (item code/description),
+  // so searching for a known item code still finds it even if its Sum MIN isn't set yet —
+  // otherwise a real item can look "not found" purely because of this filter. A facet filter
+  // like CAT/CLASS must NOT bypass the hide — this page is order planning for items that have a
+  // Sum MIN, so picking e.g. CAT=MACHINE should never flood the view with hundreds of BC=0 rows
+  // that were never here to plan orders for in the first place.
+  const TEXT_SEARCH_COLUMN_IDS = new Set(["itemNoRaw", "description"]);
   const hasActiveFilter = columnFilters.some((f) => {
+    if (!TEXT_SEARCH_COLUMN_IDS.has(f.id)) return false;
     const v = f.value;
     if (v == null || v === "") return false;
     if (Array.isArray(v)) return v.some((x) => x != null && x !== "");
@@ -579,7 +592,7 @@ export default function ItemsTable({
         style={{ cursor: isFilterRow ? "default" : "pointer", width, minWidth: width, maxWidth: width }}
       >
         {isFilterRow ? (
-          <FilterCell column={header.column} items={data} />
+          <FilterCell column={header.column} items={items ?? []} />
         ) : (
           <>
             {flexRender(header.column.columnDef.header, header.getContext())}

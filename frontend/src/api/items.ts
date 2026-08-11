@@ -40,6 +40,9 @@ export interface ItemListRow {
   prQtyCurrent: number | null;
   prIsOverride: boolean;
   lastImportedAt: string | null;
+  /** True when this item wasn't refreshed by the most recent committed Items import — it has
+   *  dropped out of the latest source file but keeps serving its old forecast/stock numbers. */
+  isStale: boolean;
   /** Last 6 months only (monthIndex 6-11 / M-6..M-1, excludes the current/incomplete month), for the dense table's per-month columns. */
   usageHistory: ItemUsageHistoryRow[];
 }

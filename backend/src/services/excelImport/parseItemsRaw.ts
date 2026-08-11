@@ -17,6 +17,12 @@ const HEADERS = [
 const USAGE_MONTH_HEADERS = ["M-12", "M-11", "M-10", "M-9", "M-8", "M-7", "M-6", "M-5", "M-4", "M-3", "M-2", "M-1", "M-0"];
 const YEARLY_HEADERS = ["YDMD-2021", "YDMD-2022", "YDMD-2023", "YDMD-2024", "YDMD-2025", "YDMD-2026"];
 
+// Excel's Table "Total Row" and AutoFilter status caption leak into the "No_" column as trailing
+// rows below the real data when a filtered/tabled range is exported — these aren't items, they're
+// spreadsheet chrome, and must never be imported as one (seen for real: a "Total" row whose ST_N0
+// cell held the column's SUM formula result, reported as a phantom item with a huge stock qty).
+const NON_ITEM_ROW_VALUES = new Set(["total", "subtotal", "grand total", "no filters applied", "filter applied", "filtered"]);
+
 export interface ParsedItemRow {
   itemNoRaw: string;
   itemNoNormalized: string;
@@ -130,19 +136,27 @@ export function parseItemsRawWorkbook(buffer: Buffer): ParseResult {
       continue; // blank spacer row
     }
     const itemNoRaw = String(itemNoCell).trim();
+    if (NON_ITEM_ROW_VALUES.has(itemNoRaw.toLowerCase())) {
+      warnings.push(`Skipped row "${itemNoRaw}" — looks like an Excel table/filter caption, not a real item.`);
+      continue;
+    }
     const itemNoNormalized = normalizeItemNo(itemNoRaw);
     if (rowsByItemNo.has(itemNoNormalized)) {
       warnings.push(`Duplicate item number "${itemNoRaw}" — the last occurrence in the file wins.`);
     }
 
+    // A negative "units used/sold" has no real business meaning here (unlike stock, which can
+    // legitimately be a running total) — seen for real as stray negative-adjustment figures in
+    // the source file that were otherwise silently corrupting avgMonth into a negative average.
+    // Clamped rather than dropped so the month/year still gets its zero entry, not a missing one.
     const usageHistory = USAGE_MONTH_HEADERS.map((label, monthIndex) => ({
       monthIndex,
       periodLabel: label,
-      qty: toNumber(raw[colIndex[label]]),
+      qty: Math.max(0, toNumber(raw[colIndex[label]])),
     }));
     const yearlySales = YEARLY_HEADERS.map((label) => ({
       year: Number(label.split("-")[1]),
-      qty: toNumber(raw[colIndex[label]]),
+      qty: Math.max(0, toNumber(raw[colIndex[label]])),
     }));
 
     rowsByItemNo.set(itemNoNormalized, {

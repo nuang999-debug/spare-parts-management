@@ -35,6 +35,10 @@ export function computeNextForecast(
   return result as [number, number, number, number, number];
 }
 
+// DANGER/WARN is deliberately scoped to items that actually have a Sum MIN (reorder threshold)
+// set — order planning only applies to the group management has chosen to plan reorders for.
+// (A version of this briefly also flagged a negative forecast as DANGER even with no Sum MIN
+// set; reverted on request since that pulled non-managed items into "ต้องสั่งซื้อ"/Planning.)
 export function computeStatus(next1: number, next2: number, sumMin: number | null): CalcStatus {
   if (!sumMin || sumMin <= 0) return "OK";
   if (next1 < sumMin) return "DANGER";

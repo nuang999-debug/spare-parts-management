@@ -34,13 +34,17 @@ auditRouter.get("/login-history", async (req, res, next) => {
       };
     }
 
+    // Fetch one extra row purely to detect whether the cap actually truncated anything, without
+    // a separate count() query — the admin needs to know the list isn't the full history, not
+    // just silently see up to 500 rows with no way to tell if there were 501 or exactly 500.
     const rows = await prisma.loginHistory.findMany({
       where,
       orderBy: { createdAt: "desc" },
-      take: HISTORY_LIMIT,
+      take: HISTORY_LIMIT + 1,
       include: { user: { select: { displayName: true, username: true } } },
     });
-    res.json(rows);
+    const truncated = rows.length > HISTORY_LIMIT;
+    res.json({ rows: rows.slice(0, HISTORY_LIMIT), truncated });
   } catch (err) {
     next(err);
   }
@@ -54,12 +58,14 @@ auditRouter.get("/edit-history", async (req, res, next) => {
     if (typeof userId === "string" && userId) where.changedById = Number(userId);
     if (typeof entityType === "string" && entityType) where.entityType = entityType;
 
-    const rows = await prisma.auditLog.findMany({
+    const fetched = await prisma.auditLog.findMany({
       where,
       orderBy: { changedAt: "desc" },
-      take: HISTORY_LIMIT,
+      take: HISTORY_LIMIT + 1,
       include: { changedBy: { select: { displayName: true, username: true } } },
     });
+    const truncated = fetched.length > HISTORY_LIMIT;
+    const rows = fetched.slice(0, HISTORY_LIMIT);
 
     // entityId is just an opaque string (AuditLog is one generic table shared across entity
     // types, with no DB relation to join on) — "Item #17918" means nothing to an admin without
@@ -88,7 +94,7 @@ auditRouter.get("/edit-history", async (req, res, next) => {
       return { ...row, entityLabel };
     });
 
-    res.json(withLabels);
+    res.json({ rows: withLabels, truncated });
   } catch (err) {
     next(err);
   }

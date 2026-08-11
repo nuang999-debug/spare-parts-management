@@ -33,7 +33,6 @@ export interface SummaryData {
   increased: ChangeRow[];
   decreased: ChangeRow[];
   newItems: ChangeRow[];
-  top15: Array<{ label: string; diff: number }>;
   upTrend: number;
   downTrend: number;
   flatTrend: number;
@@ -41,10 +40,6 @@ export interface SummaryData {
   sumMinTotal: number;
   contItems: ItemListRow[];
   discItems: ItemListRow[];
-}
-
-function truncate(s: string, n: number): string {
-  return s.length > n ? s.slice(0, n) + "…" : s;
 }
 
 function toChangeRow(d: ItemListRow): ChangeRow {
@@ -79,20 +74,20 @@ export function buildSummaryData(items: ItemListRow[]): SummaryData {
   const prItems = base.filter((d) => (d.prQtyCurrent ?? 0) > 0).length;
   const prValue = base.reduce((s, d) => s + (d.prQtyCurrent ?? 0) * (d.purchasePrice ?? 0), 0);
 
-  const increased = base
+  // Sourced from the full `items` list, not `base` — a MIN that dropped all the way to 0 is
+  // still a real "decreased" transition (arguably the most extreme one) and must not disappear
+  // from this list just because the item no longer qualifies for the base>0 KPI aggregates below.
+  // (increased/newItems both already imply sumMin>0 via their own filter, so switching their
+  // source from base to items changes nothing for them — only decreased's result set grows.)
+  const increased = items
     .filter((d) => (d.oldMin ?? 0) > 0 && (d.sumMin ?? 0) > (d.oldMin ?? 0))
     .map(toChangeRow)
     .sort((a, b) => b.diff - a.diff);
-  const decreased = base
+  const decreased = items
     .filter((d) => (d.oldMin ?? 0) > 0 && (d.sumMin ?? 0) < (d.oldMin ?? 0))
     .map(toChangeRow)
     .sort((a, b) => a.diff - b.diff);
-  const newItems = base.filter((d) => (d.oldMin ?? 0) === 0 && (d.sumMin ?? 0) > 0).map(toChangeRow);
-
-  const combined = [...increased, ...decreased]
-    .map((d) => ({ label: truncate(d.description || d.itemNoRaw, 14), diff: d.diff }))
-    .sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff));
-  const top15 = combined.slice(0, 15);
+  const newItems = items.filter((d) => (d.oldMin ?? 0) === 0 && (d.sumMin ?? 0) > 0).map(toChangeRow);
 
   const upTrend = base.filter((d) => d.calcTrend === "UP").length;
   const downTrend = base.filter((d) => d.calcTrend === "DOWN").length;
@@ -124,7 +119,6 @@ export function buildSummaryData(items: ItemListRow[]): SummaryData {
     increased,
     decreased,
     newItems,
-    top15,
     upTrend,
     downTrend,
     flatTrend,
@@ -133,6 +127,64 @@ export function buildSummaryData(items: ItemListRow[]): SummaryData {
     contItems,
     discItems,
   };
+}
+
+export interface CategoryMinBreakdownRow {
+  category: string | null;
+  label: string;
+  total: number;
+  withMin: number;
+  withoutMin: number;
+  stockWithMin: number;
+  stockWithoutMin: number;
+}
+
+const CATEGORY_ORDER = ["MACHINE", "PART"];
+
+/** Counts every item (not just base's sumMin>0 subset) by Category, split on whether Sum MIN(BC)
+ *  is set — this is the one section of the Summary page meant to show coverage gaps, so it must
+ *  not pre-filter to base like the rest of buildSummaryData does. */
+export function buildCategoryMinBreakdown(items: ItemListRow[]): CategoryMinBreakdownRow[] {
+  const groups = new Map<string, { total: number; withMin: number; stockWithMin: number; stockWithoutMin: number }>();
+  for (const it of items) {
+    const key = it.category ?? "(ไม่ระบุกลุ่ม)";
+    const g = groups.get(key) ?? { total: 0, withMin: 0, stockWithMin: 0, stockWithoutMin: 0 };
+    g.total++;
+    if ((it.sumMin ?? 0) > 0) {
+      g.withMin++;
+      g.stockWithMin += it.stockQty;
+    } else {
+      g.stockWithoutMin += it.stockQty;
+    }
+    groups.set(key, g);
+  }
+  const rows: CategoryMinBreakdownRow[] = [];
+  for (const key of CATEGORY_ORDER) {
+    const g = groups.get(key);
+    if (g)
+      rows.push({
+        category: key,
+        label: key,
+        total: g.total,
+        withMin: g.withMin,
+        withoutMin: g.total - g.withMin,
+        stockWithMin: g.stockWithMin,
+        stockWithoutMin: g.stockWithoutMin,
+      });
+    groups.delete(key);
+  }
+  for (const [key, g] of groups) {
+    rows.push({
+      category: null,
+      label: key,
+      total: g.total,
+      withMin: g.withMin,
+      withoutMin: g.total - g.withMin,
+      stockWithMin: g.stockWithMin,
+      stockWithoutMin: g.stockWithoutMin,
+    });
+  }
+  return rows;
 }
 
 export interface MonthsToNormal {

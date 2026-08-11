@@ -8,7 +8,7 @@ import { useAuth } from "../../auth/AuthContext";
 export default function Users() {
   const { user: currentUser } = useAuth();
   const queryClient = useQueryClient();
-  const { data: users, isLoading } = useQuery({ queryKey: ["users"], queryFn: listUsers });
+  const { data: users, isLoading, isError, error: listError } = useQuery({ queryKey: ["users"], queryFn: listUsers });
 
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -93,6 +93,9 @@ export default function Users() {
         <p className="import-error">
           {updateMutation.error instanceof ApiError ? updateMutation.error.message : "Update failed"}
         </p>
+      )}
+      {isError && (
+        <p className="import-error">{listError instanceof ApiError ? listError.message : "Failed to load users"}</p>
       )}
 
       <table>

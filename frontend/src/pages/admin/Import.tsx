@@ -246,6 +246,11 @@ export default function Import() {
       <PurchaseLinesImportSection />
 
       <h3 style={{ marginTop: "2.5rem" }}>Import history</h3>
+      {batchesQuery.isError && (
+        <p className="import-error">
+          {batchesQuery.error instanceof ApiError ? batchesQuery.error.message : "Failed to load import history"}
+        </p>
+      )}
       <table>
         <thead>
           <tr>

@@ -1,5 +1,16 @@
+// Excel autocorrect silently swaps a typed straight quote/apostrophe for its "smart" Unicode
+// counterpart (e.g. 18"RED -> 18"RED with U+201D) — two exports of the exact same item can end
+// up with different raw quote characters, and without this normalization they land as two
+// separate item rows with sales history split between them (found for real: SW44-18"RED).
+const SMART_QUOTES: [RegExp, string][] = [
+  [/[“”„″]/g, '"'],
+  [/[‘’‚′]/g, "'"],
+];
+
 export function normalizeItemNo(raw: string | number): string {
-  return String(raw).trim().replace(/\s+/g, "");
+  let s = String(raw).trim().replace(/\s+/g, "");
+  for (const [pattern, replacement] of SMART_QUOTES) s = s.replace(pattern, replacement);
+  return s;
 }
 
 /**
