@@ -219,6 +219,12 @@ export async function commitItemsImport(params: {
   // earlier version of this function) meant a crash partway through left a batch row claiming
   // COMMITTED with the full row count while most items were never touched, which then fooled
   // every item's isStale check into thinking it was current when it wasn't.
+  // uploadedAt is pinned to the SAME `now` every item's lastImportedAt was stamped with (rather
+  // than defaulting to the current time, which by definition runs later than that, since this
+  // insert happens after the whole chunk loop) — otherwise isStale's `lastImportedAt < latest
+  // batch's uploadedAt` check would compare every just-updated item's now-in-the-past timestamp
+  // against a strictly-later batch timestamp and flag the entire catalog stale immediately after
+  // a fully successful import.
   const batch = await prisma.importBatch.create({
     data: {
       fileName,
@@ -226,6 +232,7 @@ export async function commitItemsImport(params: {
       uploadedById,
       rowCount: rows.length,
       status: "COMMITTED",
+      uploadedAt: now,
     },
   });
 
