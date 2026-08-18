@@ -15,7 +15,14 @@ import { applyPackingRule } from "../packingRules";
 import { loadLatestPoData, type PoBucketsMap } from "./poBuckets";
 import type { ParsedItemRow } from "./parseItemsRaw";
 
-const ITEM_CHUNK_SIZE = 500;
+// 500 was too large once every row does its own network round-trip against a real (non-
+// localhost) database: on Render's production Postgres, a 500-row chunk of sequential per-row
+// upserts routinely exceeded Prisma's default 5s interactive-transaction timeout, aborting the
+// whole chunk with a P2028 error — invisible on local dev, where the near-zero-latency localhost
+// connection finishes 500 round-trips well under the limit. 150 plus an explicit longer timeout
+// gives real headroom without losing the point of chunking (short-lived locks).
+const ITEM_CHUNK_SIZE = 150;
+const CHUNK_TRANSACTION_TIMEOUT_MS = 60_000;
 
 function chunk<T>(arr: T[], size: number): T[][] {
   const out: T[][] = [];
@@ -138,16 +145,6 @@ export async function commitItemsImport(params: {
 }): Promise<{ importBatchId: number; rowCount: number }> {
   const { rows, fileName, uploadedById } = params;
 
-  const batch = await prisma.importBatch.create({
-    data: {
-      fileName,
-      fileType: "ITEMS_RAW",
-      uploadedById,
-      rowCount: rows.length,
-      status: "COMMITTED",
-    },
-  });
-
   const packingRules = await prisma.packingUnitRule.findMany({ where: { active: true } });
   const packingRuleByNo = new Map(packingRules.map((r) => [r.itemNoNormalized, r]));
 
@@ -214,8 +211,23 @@ export async function commitItemsImport(params: {
 
       await tx.itemUsageHistory.createMany({ data: usageRows });
       await tx.itemYearlySales.createMany({ data: yearlyRows });
-    });
+    }, { timeout: CHUNK_TRANSACTION_TIMEOUT_MS });
   }
+
+  // Created only after every chunk has actually succeeded — matches the old single-transaction
+  // behavior where a mid-import failure left no batch row at all. Creating this upfront (the
+  // earlier version of this function) meant a crash partway through left a batch row claiming
+  // COMMITTED with the full row count while most items were never touched, which then fooled
+  // every item's isStale check into thinking it was current when it wasn't.
+  const batch = await prisma.importBatch.create({
+    data: {
+      fileName,
+      fileType: "ITEMS_RAW",
+      uploadedById,
+      rowCount: rows.length,
+      status: "COMMITTED",
+    },
+  });
 
   return { importBatchId: batch.id, rowCount: rows.length };
 }

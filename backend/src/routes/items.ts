@@ -168,28 +168,33 @@ itemsRouter.post("/clear-all-pr", requireRole("ADMIN"), async (req, res, next) =
 
     // Chunked into separate transactions (not one covering every affected row) so a large
     // "clear all" can't hold a lock across the whole affected set for longer than one chunk —
-    // same fix as the bulk import commits, for the same reason.
-    const CHUNK_SIZE = 500;
+    // same fix as the bulk import commits, for the same reason. Chunk size + the explicit
+    // timeout both mirror commitItemsImport.ts: sequential per-item audit-log inserts inside one
+    // transaction can exceed Prisma's default 5s timeout against a real (non-localhost) database.
+    const CHUNK_SIZE = 150;
     for (let i = 0; i < itemsToClear.length; i += CHUNK_SIZE) {
       const itemChunk = itemsToClear.slice(i, i + CHUNK_SIZE);
-      await prisma.$transaction(async (tx) => {
-        for (const item of itemChunk) {
-          await recordChange(tx, {
-            entityType: "Item",
-            entityId: String(item.id),
-            fieldName: "prQtyCurrent",
-            oldValue: item.prQtyCurrent,
-            newValue: null,
-            action: "UPDATE",
-            changedById,
-            note: "ล้าง PR ทั้งหมด",
+      await prisma.$transaction(
+        async (tx) => {
+          for (const item of itemChunk) {
+            await recordChange(tx, {
+              entityType: "Item",
+              entityId: String(item.id),
+              fieldName: "prQtyCurrent",
+              oldValue: item.prQtyCurrent,
+              newValue: null,
+              action: "UPDATE",
+              changedById,
+              note: "ล้าง PR ทั้งหมด",
+            });
+          }
+          await tx.item.updateMany({
+            where: { id: { in: itemChunk.map((item) => item.id) } },
+            data: { prQtyCurrent: null, prIsOverride: false },
           });
-        }
-        await tx.item.updateMany({
-          where: { id: { in: itemChunk.map((item) => item.id) } },
-          data: { prQtyCurrent: null, prIsOverride: false },
-        });
-      });
+        },
+        { timeout: 60_000 }
+      );
     }
 
     res.json({ clearedCount: itemsToClear.length });
