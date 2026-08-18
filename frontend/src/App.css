@@ -917,9 +917,10 @@ select:focus {
   background: rgba(0, 212, 170, 0.08) !important;
 }
 
-/* Model ยกเลิกขาย (discontinued from sale) — deliberately louder than row-selected so the
-   caution is never masked just because the row also happens to be the selected one. */
-.items-table tr.row-discontinued td {
+/* Model ยกเลิกขาย (discontinued from sale) — scoped to just the รหัส/ชื่ออะไหล่ cells (not the
+   whole row), and deliberately louder than row-selected so the caution is never masked just
+   because the row also happens to be the selected one. */
+.items-table td.cell-discontinued {
   background: rgba(245, 158, 11, 0.16) !important;
 }
 

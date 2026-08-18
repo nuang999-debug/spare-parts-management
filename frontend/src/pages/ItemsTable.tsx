@@ -342,10 +342,7 @@ export default function ItemsTable({
   const [activeCell, setActiveCell] = useState<{ rowIndex: number; colId: string } | null>(null);
 
   function rowClassName(item: ItemListRow): string {
-    const classes: string[] = [];
-    if (item.id === selectedItemId) classes.push("row-selected");
-    if (item.discontinuedModel) classes.push("row-discontinued");
-    return classes.join(" ");
+    return item.id === selectedItemId ? "row-selected" : "";
   }
 
   const zeroSumMinCount = useMemo(() => (items ?? []).filter((d) => (d.sumMin ?? 0) <= 0).length, [items]);
@@ -623,10 +620,15 @@ export default function ItemsTable({
   function bodyCell(cell: ReturnType<(typeof rows)[number]["getVisibleCells"]>[number], rowIndex: number) {
     const isActive = activeCell?.rowIndex === rowIndex && activeCell?.colId === cell.column.id;
     const width = cell.column.getSize();
+    // Model ยกเลิกขาย highlight is scoped to just รหัส/ชื่ออะไหล่ (item code + description), not
+    // the whole row — those are the two columns a planner actually reads to place an order, and a
+    // full-row tint competed too much with the status/next-forecast color coding further right.
+    const isDiscontinuedCell =
+      (cell.column.id === "itemNoRaw" || cell.column.id === "description") && !!cell.row.original.discontinuedModel;
     return (
       <td
         key={cell.id}
-        className={isActive ? "active-cell" : ""}
+        className={[isActive ? "active-cell" : "", isDiscontinuedCell ? "cell-discontinued" : ""].filter(Boolean).join(" ")}
         style={{ width, minWidth: width, maxWidth: width }}
         onClick={() => {
           suppressScrollRef.current = true;
