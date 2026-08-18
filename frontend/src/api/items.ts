@@ -20,6 +20,9 @@ export interface ItemListRow {
   purchasePrice: number | null;
   remark: string | null;
   forModel: string | null;
+  /** e.g. "ยกเลิกขายCA330" — set when the model this part belongs to has been discontinued from
+   *  sale. Null when not applicable. */
+  discontinuedModel: string | null;
   stockQty: number;
   poQty: number;
   backorderQty: number;

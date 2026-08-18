@@ -126,14 +126,23 @@ const columns = [
     size: 120,
     filterFn: "includesString",
     meta: { filterType: "text" },
-    cell: (info) =>
-      info.row.original.isStale ? (
-        <span title="ไม่พบในไฟล์ import ล่าสุด — ข้อมูลนี้อาจไม่เป็นปัจจุบัน">
-          ⚠️ {info.getValue()}
+    cell: (info) => {
+      const item = info.row.original;
+      if (!item.isStale && !item.discontinuedModel) return info.getValue();
+      const title = [
+        item.discontinuedModel ? `Model ยกเลิกขาย: ${item.discontinuedModel} — ระวังก่อนสั่งซื้อเพิ่ม` : null,
+        item.isStale ? "ไม่พบในไฟล์ import ล่าสุด — ข้อมูลนี้อาจไม่เป็นปัจจุบัน" : null,
+      ]
+        .filter(Boolean)
+        .join(" · ");
+      return (
+        <span title={title}>
+          {item.discontinuedModel ? "🛑 " : ""}
+          {item.isStale ? "⚠️ " : ""}
+          {info.getValue()}
         </span>
-      ) : (
-        info.getValue()
-      ),
+      );
+    },
   }),
   columnHelper.accessor("description", {
     header: "ชื่ออะไหล่",
@@ -331,6 +340,13 @@ export default function ItemsTable({
   const [alertOnly, setAlertOnly] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [activeCell, setActiveCell] = useState<{ rowIndex: number; colId: string } | null>(null);
+
+  function rowClassName(item: ItemListRow): string {
+    const classes: string[] = [];
+    if (item.id === selectedItemId) classes.push("row-selected");
+    if (item.discontinuedModel) classes.push("row-discontinued");
+    return classes.join(" ");
+  }
 
   const zeroSumMinCount = useMemo(() => (items ?? []).filter((d) => (d.sumMin ?? 0) <= 0).length, [items]);
 
@@ -754,7 +770,7 @@ export default function ItemsTable({
                       <tr
                         key={row.id}
                         onClick={() => setSelectedItemId(row.original.id)}
-                        className={row.original.id === selectedItemId ? "row-selected" : ""}
+                        className={rowClassName(row.original)}
                       >
                         {row
                           .getVisibleCells()
@@ -795,7 +811,7 @@ export default function ItemsTable({
                       <tr
                         key={row.id}
                         onClick={() => setSelectedItemId(row.original.id)}
-                        className={row.original.id === selectedItemId ? "row-selected" : ""}
+                        className={rowClassName(row.original)}
                       >
                         {row
                           .getVisibleCells()

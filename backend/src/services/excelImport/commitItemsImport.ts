@@ -101,6 +101,7 @@ function computeItemData(
     prIsOverride,
     remark: row.remark,
     forModel: row.forModel,
+    discontinuedModel: row.discontinuedModel,
     lastImportedAt: ctx.now,
   };
 }

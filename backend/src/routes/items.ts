@@ -21,6 +21,7 @@ const LIST_SELECT = {
   purchasePrice: true,
   remark: true,
   forModel: true,
+  discontinuedModel: true,
   stockQty: true,
   poQty: true,
   backorderQty: true,

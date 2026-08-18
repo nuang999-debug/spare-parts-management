@@ -462,6 +462,12 @@ export interface Suggestion {
 
 export function buildSuggestions(item: ItemDetail, a: ItemAnalysis): Suggestion[] {
   const suggestions: Suggestion[] = [];
+  if (item.discontinuedModel) {
+    suggestions.push({
+      icon: "🛑",
+      text: `Model ยกเลิกขาย: ${item.discontinuedModel} — ระวังก่อนสั่งซื้อเพิ่ม เนื่องจากรุ่นที่ใช้อะไหล่นี้เลิกขายแล้ว`,
+    });
+  }
   if (item.calcStatus === "DANGER") {
     suggestions.push({
       icon: "🚨",

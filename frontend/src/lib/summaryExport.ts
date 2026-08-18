@@ -57,6 +57,7 @@ function changeRowsToSheetData(rows: ChangeRow[]) {
     "Pur.Price": r.purchasePrice ?? "",
     "Remark": r.remark ?? "",
     "For Model": r.forModel ?? "",
+    "Discontinued Model": r.discontinuedModel ?? "",
   }));
 }
 
@@ -80,6 +81,7 @@ export function exportSumMinSheet(type: "up" | "dn", rows: ChangeRow[]) {
     "Pur.Price": r.purchasePrice ?? "",
     "Remark": r.remark ?? "",
     "For Model": r.forModel ?? "",
+    "Discontinued Model": r.discontinuedModel ?? "",
     "Lead Time": r.leadTimeDays ?? "",
     "Vendor": r.vendor ?? "",
   }));
@@ -129,6 +131,7 @@ function usageRowsToSheetData(rows: ItemListRow[]) {
       "Sum MIN(BC)": r.sumMin ?? "",
       "Remark": r.remark ?? "",
       "For Model": r.forModel ?? "",
+      "Discontinued Model": r.discontinuedModel ?? "",
     };
   });
 }

@@ -13,6 +13,7 @@ export interface ChangeRow {
   stockQty: number;
   purchasePrice: number | null;
   forModel: string | null;
+  discontinuedModel: string | null;
   remark: string | null;
   diff: number;
   calcTrend: CalcTrend | null;
@@ -56,6 +57,7 @@ function toChangeRow(d: ItemListRow): ChangeRow {
     stockQty: d.stockQty,
     purchasePrice: d.purchasePrice,
     forModel: d.forModel,
+    discontinuedModel: d.discontinuedModel,
     remark: d.remark,
     diff: (d.sumMin ?? 0) - (d.oldMin ?? 0),
     calcTrend: d.calcTrend,

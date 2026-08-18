@@ -14,6 +14,11 @@ const HEADERS = [
   "Lead time Calculation", "Old Min.ST", "Summary MiN.ST", "Remark", "For Model",
 ] as const;
 
+// Added to the source file after the other columns above were already established — treated as
+// optional (missing entirely on an older export) rather than a hard "missing column" error, so a
+// file from before this column existed still imports fine, just with every row's value as null.
+const DISCONTINUED_MODEL_HEADER = "MODEL ยกเลิกขาย";
+
 const USAGE_MONTH_HEADERS = ["M-12", "M-11", "M-10", "M-9", "M-8", "M-7", "M-6", "M-5", "M-4", "M-3", "M-2", "M-1", "M-0"];
 const YEARLY_HEADERS = ["YDMD-2021", "YDMD-2022", "YDMD-2023", "YDMD-2024", "YDMD-2025", "YDMD-2026"];
 
@@ -43,6 +48,9 @@ export interface ParsedItemRow {
   sumMin: number | null;
   remark: string | null;
   forModel: string | null;
+  /** e.g. "ยกเลิกขายCA330" — set when the model this part belongs to has been discontinued from
+   *  sale, a signal to be cautious about reordering it. Null when the column is blank or absent. */
+  discontinuedModel: string | null;
 }
 
 export interface ParseResult {
@@ -124,6 +132,8 @@ export function parseItemsRawWorkbook(buffer: Buffer): ParseResult {
   if (errors.length) {
     return { rows: [], rowCount: 0, warnings, errors };
   }
+  const discontinuedModelIdx = normalizedHeaderRow.indexOf(normHdr(DISCONTINUED_MODEL_HEADER));
+  if (discontinuedModelIdx !== -1) colIndex[DISCONTINUED_MODEL_HEADER] = discontinuedModelIdx;
 
   const dataRows = allRows.slice(headerRowIdx + 1);
   // Keyed by itemNoNormalized so a duplicate item number overwrites rather than
@@ -179,6 +189,7 @@ export function parseItemsRawWorkbook(buffer: Buffer): ParseResult {
       sumMin: toNumberOrNull(raw[colIndex["Summary MiN.ST"]]),
       remark: toStringOrNull(raw[colIndex["Remark"]]),
       forModel: toStringOrNull(raw[colIndex["For Model"]]),
+      discontinuedModel: toStringOrNull(raw[colIndex[DISCONTINUED_MODEL_HEADER]]),
     });
   }
 
