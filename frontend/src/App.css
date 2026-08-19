@@ -1184,6 +1184,54 @@ select:focus {
   font-family: var(--font-mono);
 }
 
+/* The PO card stays the same width as every other kpi card (no column-spanning) — the due-date
+   breakdown replaces the "ช่อง M: X" sub-line below the value instead of sitting beside it, so it
+   has to fit inside one normal card's width. A single grid spanning the whole list (not per-row
+   flex) keeps every row's date label and quantity in the same two columns — otherwise each row's
+   quantity position would drift with that row's own label width (e.g. "5 ส.ค." vs "ไม่ระบุวันที่"). */
+.po-due-dates {
+  display: grid;
+  grid-template-columns: auto auto;
+  column-gap: 0.3rem;
+  row-gap: 0.1rem;
+  align-items: baseline;
+  min-width: 0;
+  margin-top: 0.1rem;
+}
+
+.po-due-date-label {
+  font-size: 0.58rem;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+}
+
+.po-due-date-qty {
+  font-size: 0.58rem;
+  font-family: var(--font-mono);
+  color: var(--accent2);
+  text-align: right;
+}
+
+.po-due-date-toggle {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.3rem;
+  font-size: 0.56rem;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  padding: 0.05rem 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.po-due-date-toggle-collapse {
+  justify-content: center;
+  text-decoration: none;
+}
+
 .detail-panel-body section {
   margin-bottom: 1.3rem;
 }

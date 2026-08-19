@@ -55,6 +55,12 @@ export interface ItemYearlySalesRow {
   qty: number;
 }
 
+export interface PoDueDateRow {
+  /** ISO date (YYYY-MM-DD), or null when the source Purchase Line had no expected receipt date. */
+  date: string | null;
+  qty: number;
+}
+
 export interface ItemDetail extends Omit<ItemListRow, "usageHistory"> {
   dimension: string | null;
   unitCost: number | null;
@@ -65,6 +71,9 @@ export interface ItemDetail extends Omit<ItemListRow, "usageHistory"> {
   usageHistory: ItemUsageHistoryRow[];
   yearlySales: ItemYearlySalesRow[];
   packingRule: { multipleOf: number; active: boolean } | null;
+  /** Outstanding PO lines from the latest Purchase Lines import, grouped by expected receipt
+   *  date and summed, sorted ascending with the null-date bucket (if any) sorted last. */
+  poDueDates: PoDueDateRow[];
 }
 
 export interface ItemHistoryEntry {

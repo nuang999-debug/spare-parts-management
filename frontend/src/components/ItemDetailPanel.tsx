@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Area,
@@ -13,7 +13,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { getItem, getItemHistory } from "../api/items";
+import { getItem, getItemHistory, type PoDueDateRow } from "../api/items";
 import { analyzeItem, computeWhatIfNext, nextCellTone, whatIfBucket } from "../lib/analysis";
 import { buildNarrative, buildPlanReasons, buildSuggestions, type Run } from "../lib/narrative";
 import { thaiMonthLabel, thaiDateShort } from "../lib/thaiMonths";
@@ -65,6 +65,52 @@ function fmt(n: number | null | undefined, digits = 1): string {
 function fmtN(n: number | null | undefined, digits = 1): string {
   if (n == null) return "—";
   return n.toLocaleString("en-US", { maximumFractionDigits: digits, minimumFractionDigits: 0 });
+}
+
+const PO_DUE_DATE_COLLAPSED_COUNT = 2;
+
+/** "YYYY-MM-DD" parsed as a local date (not via `new Date(str)`, which reads it as UTC midnight
+ *  and can shift a day in either direction depending on the viewer's timezone offset). */
+function formatPoDueDate(dateStr: string): string {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return thaiDateShort(new Date(y, m - 1, d));
+}
+
+function PoDueDatesList({ rows }: { rows: PoDueDateRow[] }) {
+  const [expanded, setExpanded] = useState(false);
+  if (rows.length === 0) return null;
+
+  const visible = expanded ? rows : rows.slice(0, PO_DUE_DATE_COLLAPSED_COUNT);
+  const hidden = rows.slice(PO_DUE_DATE_COLLAPSED_COUNT);
+  const hiddenTotal = hidden.reduce((s, r) => s + r.qty, 0);
+
+  return (
+    <div className="po-due-dates">
+      {visible.map((r) => (
+        <Fragment key={r.date ?? "none"}>
+          <span className="po-due-date-label" style={r.date === null ? { color: "var(--warning)" } : undefined}>
+            {r.date ? formatPoDueDate(r.date) : "ไม่ระบุวันที่"}
+          </span>
+          <span className="po-due-date-qty">{fmtN(r.qty, 0)}</span>
+        </Fragment>
+      ))}
+      {!expanded && hidden.length > 0 && (
+        <button type="button" className="po-due-date-toggle" onClick={() => setExpanded(true)}>
+          <span>+{hidden.length} วันอื่น</span>
+          <span>{fmtN(hiddenTotal, 0)}</span>
+        </button>
+      )}
+      {expanded && hidden.length > 0 && (
+        <button
+          type="button"
+          className="po-due-date-toggle po-due-date-toggle-collapse"
+          onClick={() => setExpanded(false)}
+        >
+          ▲ ย่อ
+        </button>
+      )}
+    </div>
+  );
 }
 
 const STATUS_DASHBOARD: Record<string, { label: string; color: string }> = {
@@ -181,6 +227,8 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
         const whatIfNext = whatIfPrQty > 0 ? computeWhatIfNext(a.next, item.leadTimeDays, whatIfPrQty) : null;
         const whatIfBucketMonth = whatIfBucket(item.leadTimeDays);
 
+        const hasPoDueDates = item.poDueDates.length > 0;
+
         const fields: Array<[string, string]> = [
           ["No. (A)", item.itemNoRaw],
           ["Description (B)", item.description ?? "-"],
@@ -258,7 +306,11 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
               <div className="kpi">
                 <span className="kpi-label">PO N0 (BD=M)</span>
                 <span className="kpi-value" style={{ color: "var(--accent2)" }}>{fmtN(item.poQty, 0)}</span>
-                <span className="kpi-sub">ช่อง M: {fmtN(item.poQty, 0)}</span>
+                {hasPoDueDates ? (
+                  <PoDueDatesList key={item.id} rows={item.poDueDates} />
+                ) : (
+                  <span className="kpi-sub">ช่อง M: {fmtN(item.poQty, 0)}</span>
+                )}
               </div>
               <div className="kpi">
                 <span className="kpi-label">Stock N0 (BE=Q)</span>

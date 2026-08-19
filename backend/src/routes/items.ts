@@ -92,7 +92,7 @@ itemsRouter.get("/:id", async (req, res, next) => {
     });
     if (!item) throw new HttpError(404, "Item not found");
 
-    const [packingRule, latestBatch] = await Promise.all([
+    const [packingRule, latestBatch, latestPoBatch] = await Promise.all([
       prisma.packingUnitRule.findUnique({
         where: { itemNoNormalized: item.itemNoNormalized },
         select: { multipleOf: true, active: true },
@@ -102,11 +102,38 @@ itemsRouter.get("/:id", async (req, res, next) => {
         orderBy: { uploadedAt: "desc" },
         select: { uploadedAt: true },
       }),
+      prisma.importBatch.findFirst({
+        where: { fileType: "PURCHASE_LINES", status: "COMMITTED" },
+        orderBy: { uploadedAt: "desc" },
+        select: { id: true },
+      }),
     ]);
     const latestImportAt = latestBatch?.uploadedAt ?? null;
     const isStale = latestImportAt != null && (!item.lastImportedAt || item.lastImportedAt < latestImportAt);
 
-    res.json({ ...item, isStale, packingRule: packingRule?.active ? packingRule : null });
+    let poDueDates: { date: string | null; qty: number }[] = [];
+    if (latestPoBatch) {
+      const lines = await prisma.purchaseLine.findMany({
+        where: { itemNoNormalized: item.itemNoNormalized, importBatchId: latestPoBatch.id },
+        select: { expectedReceiptDate: true, outstandingQty: true },
+      });
+      const byDate = new Map<string | null, number>();
+      for (const line of lines) {
+        const key = line.expectedReceiptDate ? line.expectedReceiptDate.toISOString().slice(0, 10) : null;
+        byDate.set(key, (byDate.get(key) ?? 0) + line.outstandingQty);
+      }
+      poDueDates = [...byDate.entries()]
+        .map(([date, qty]) => ({ date, qty }))
+        .sort((a, b) => {
+          // Null (no date) always sorts last — it's the least actionable info, not
+          // arbitrarily interleaved among real dates.
+          if (a.date === null) return 1;
+          if (b.date === null) return -1;
+          return a.date.localeCompare(b.date);
+        });
+    }
+
+    res.json({ ...item, isStale, packingRule: packingRule?.active ? packingRule : null, poDueDates });
   } catch (err) {
     next(err);
   }
