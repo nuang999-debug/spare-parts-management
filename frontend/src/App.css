@@ -1193,20 +1193,20 @@ select:focus {
   display: grid;
   grid-template-columns: auto auto;
   column-gap: 0.3rem;
-  row-gap: 0.1rem;
+  row-gap: 0.15rem;
   align-items: baseline;
   min-width: 0;
   margin-top: 0.1rem;
 }
 
 .po-due-date-label {
-  font-size: 0.58rem;
+  font-size: 0.68rem;
   font-family: var(--font-mono);
   color: var(--text-muted);
 }
 
 .po-due-date-qty {
-  font-size: 0.58rem;
+  font-size: 0.68rem;
   font-family: var(--font-mono);
   color: var(--accent2);
   text-align: right;
@@ -1217,7 +1217,7 @@ select:focus {
   display: flex;
   justify-content: space-between;
   gap: 0.3rem;
-  font-size: 0.56rem;
+  font-size: 0.64rem;
   font-family: var(--font-mono);
   color: var(--text-muted);
   background: none;
