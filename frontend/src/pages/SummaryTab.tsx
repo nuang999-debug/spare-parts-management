@@ -133,8 +133,9 @@ export default function SummaryTab({ onGoToItem }: { onGoToItem: (itemNoRaw: str
       withoutMin: acc.withoutMin + r.withoutMin,
       stockWithMin: acc.stockWithMin + r.stockWithMin,
       stockWithoutMin: acc.stockWithoutMin + r.stockWithoutMin,
+      withoutMinStockGt0: acc.withoutMinStockGt0 + r.withoutMinStockGt0,
     }),
-    { total: 0, withMin: 0, withoutMin: 0, stockWithMin: 0, stockWithoutMin: 0 },
+    { total: 0, withMin: 0, withoutMin: 0, stockWithMin: 0, stockWithoutMin: 0, withoutMinStockGt0: 0 },
   );
   const catMinNoMinGroups = catMinBreakdown.filter((r) => r.total > 0 && r.withMin === 0);
 
@@ -226,7 +227,7 @@ export default function SummaryTab({ onGoToItem }: { onGoToItem: (itemNoRaw: str
         </div>
         <div className="sum-sec-bd">
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.76rem", minWidth: 560 }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.76rem", minWidth: 640 }}>
               <thead>
                 <tr style={{ color: "var(--text-muted)", fontSize: "0.66rem", textTransform: "uppercase" }}>
                   <td style={{ padding: "0.3rem 0.4rem 0.3rem 0" }} rowSpan={2}>
@@ -244,7 +245,7 @@ export default function SummaryTab({ onGoToItem }: { onGoToItem: (itemNoRaw: str
                   >
                     มี MIN.ST
                   </td>
-                  <td style={{ padding: "0.3rem 0.4rem 0.15rem", textAlign: "center", borderBottom: "1px solid var(--border-strong)" }} colSpan={2}>
+                  <td style={{ padding: "0.3rem 0.4rem 0.15rem", textAlign: "center", borderBottom: "1px solid var(--border-strong)" }} colSpan={3}>
                     ไม่มี MIN.ST
                   </td>
                   <td style={{ padding: "0.3rem 0 0.3rem 0.4rem", textAlign: "right" }} rowSpan={2}>
@@ -256,6 +257,7 @@ export default function SummaryTab({ onGoToItem }: { onGoToItem: (itemNoRaw: str
                   <td style={{ padding: "0.15rem 0.4rem 0.4rem", textAlign: "right" }}>Stock (ชิ้น)</td>
                   <td style={{ padding: "0.15rem 0.4rem 0.4rem", textAlign: "right" }}>SKU</td>
                   <td style={{ padding: "0.15rem 0.4rem 0.4rem", textAlign: "right" }}>Stock (ชิ้น)</td>
+                  <td style={{ padding: "0.15rem 0.4rem 0.4rem", textAlign: "right", color: BLUE }}>SKU (Stock&gt;0)</td>
                 </tr>
               </thead>
               <tbody style={{ fontFamily: "var(--font-mono)" }}>
@@ -272,6 +274,9 @@ export default function SummaryTab({ onGoToItem }: { onGoToItem: (itemNoRaw: str
                     </td>
                     <td style={{ padding: "0.45rem 0.4rem", textAlign: "right" }}>{fmt(r.withoutMin)}</td>
                     <td style={{ padding: "0.45rem 0.4rem", textAlign: "right" }}>{fmt(r.stockWithoutMin)}</td>
+                    <td style={{ padding: "0.45rem 0.4rem", textAlign: "right", color: BLUE, fontWeight: 700 }}>
+                      {fmt(r.withoutMinStockGt0)}
+                    </td>
                     <td style={{ padding: "0.45rem 0 0.45rem 0.4rem", textAlign: "right", color: r.withMin > 0 ? GREEN : RED }}>
                       {r.total > 0 ? ((r.withMin / r.total) * 100).toFixed(1) : "0.0"}%
                     </td>
@@ -289,6 +294,9 @@ export default function SummaryTab({ onGoToItem }: { onGoToItem: (itemNoRaw: str
                   </td>
                   <td style={{ padding: "0.5rem 0.4rem 0.2rem", textAlign: "right" }}>{fmt(catMinTotal.withoutMin)}</td>
                   <td style={{ padding: "0.5rem 0.4rem 0.2rem", textAlign: "right" }}>{fmt(catMinTotal.stockWithoutMin)}</td>
+                  <td style={{ padding: "0.5rem 0.4rem 0.2rem", textAlign: "right", color: BLUE }}>
+                    {fmt(catMinTotal.withoutMinStockGt0)}
+                  </td>
                   <td style={{ padding: "0.5rem 0 0.2rem 0.4rem", textAlign: "right", color: "var(--accent)" }}>
                     {catMinTotal.total > 0 ? ((catMinTotal.withMin / catMinTotal.total) * 100).toFixed(1) : "0.0"}%
                   </td>

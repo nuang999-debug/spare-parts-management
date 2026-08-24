@@ -139,6 +139,9 @@ export interface CategoryMinBreakdownRow {
   withoutMin: number;
   stockWithMin: number;
   stockWithoutMin: number;
+  /** Of `withoutMin`, how many still have real stock on hand — these are the ones most worth
+   *  setting a Sum MIN for first, since they already carry inventory with no minimum tracked. */
+  withoutMinStockGt0: number;
 }
 
 const CATEGORY_ORDER = ["MACHINE", "PART"];
@@ -147,16 +150,20 @@ const CATEGORY_ORDER = ["MACHINE", "PART"];
  *  is set — this is the one section of the Summary page meant to show coverage gaps, so it must
  *  not pre-filter to base like the rest of buildSummaryData does. */
 export function buildCategoryMinBreakdown(items: ItemListRow[]): CategoryMinBreakdownRow[] {
-  const groups = new Map<string, { total: number; withMin: number; stockWithMin: number; stockWithoutMin: number }>();
+  const groups = new Map<
+    string,
+    { total: number; withMin: number; stockWithMin: number; stockWithoutMin: number; withoutMinStockGt0: number }
+  >();
   for (const it of items) {
     const key = it.category ?? "(ไม่ระบุกลุ่ม)";
-    const g = groups.get(key) ?? { total: 0, withMin: 0, stockWithMin: 0, stockWithoutMin: 0 };
+    const g = groups.get(key) ?? { total: 0, withMin: 0, stockWithMin: 0, stockWithoutMin: 0, withoutMinStockGt0: 0 };
     g.total++;
     if ((it.sumMin ?? 0) > 0) {
       g.withMin++;
       g.stockWithMin += it.stockQty;
     } else {
       g.stockWithoutMin += it.stockQty;
+      if (it.stockQty > 0) g.withoutMinStockGt0++;
     }
     groups.set(key, g);
   }
@@ -172,6 +179,7 @@ export function buildCategoryMinBreakdown(items: ItemListRow[]): CategoryMinBrea
         withoutMin: g.total - g.withMin,
         stockWithMin: g.stockWithMin,
         stockWithoutMin: g.stockWithoutMin,
+        withoutMinStockGt0: g.withoutMinStockGt0,
       });
     groups.delete(key);
   }
@@ -184,6 +192,7 @@ export function buildCategoryMinBreakdown(items: ItemListRow[]): CategoryMinBrea
       withoutMin: g.total - g.withMin,
       stockWithMin: g.stockWithMin,
       stockWithoutMin: g.stockWithoutMin,
+      withoutMinStockGt0: g.withoutMinStockGt0,
     });
   }
   return rows;
