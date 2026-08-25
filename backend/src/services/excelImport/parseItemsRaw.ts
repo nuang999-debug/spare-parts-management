@@ -33,6 +33,9 @@ export interface ParsedItemRow {
   itemNoNormalized: string;
   description: string;
   class: string | null;
+  /** Raw numeric lifecycle code from the source file's "Status" column (e.g. 15/40/70/80/99) —
+   *  stored as-is, not interpreted. Null when the cell is blank or non-numeric. */
+  sourceStatus: number | null;
   category: string | null;
   dimension: string | null;
   purchasePrice: number | null;
@@ -174,6 +177,7 @@ export function parseItemsRawWorkbook(buffer: Buffer): ParseResult {
       itemNoNormalized,
       description: toStringOrNull(raw[colIndex["Description"]]) ?? "",
       class: toStringOrNull(raw[colIndex["Class"]]),
+      sourceStatus: toNumberOrNull(raw[colIndex["Status"]]),
       category: toStringOrNull(raw[colIndex["Category"]]),
       dimension: toStringOrNull(raw[colIndex["Dimension"]]),
       purchasePrice: toNumberOrNull(raw[colIndex["Pur. Price"]]),

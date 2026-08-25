@@ -78,6 +78,7 @@ function computeItemData(
     itemNoNormalized: row.itemNoNormalized,
     description: row.description,
     class: row.class,
+    sourceStatus: row.sourceStatus,
     category: row.category,
     dimension: row.dimension,
     purchasePrice: row.purchasePrice,

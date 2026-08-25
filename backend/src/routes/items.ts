@@ -16,6 +16,7 @@ const LIST_SELECT = {
   itemNoNormalized: true,
   description: true,
   class: true,
+  sourceStatus: true,
   category: true,
   vendor: true,
   purchasePrice: true,

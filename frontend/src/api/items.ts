@@ -15,6 +15,9 @@ export interface ItemListRow {
   itemNoNormalized: string;
   description: string | null;
   class: string | null;
+  /** Raw numeric lifecycle code from the source file's "Status" column (e.g. 15=Active,
+   *  40=within guarantee, 70/80=obsolete-but-stocked, 99=Obsolete). Not interpreted client-side. */
+  sourceStatus: number | null;
   category: string | null;
   vendor: string | null;
   purchasePrice: number | null;

@@ -85,6 +85,10 @@ model Item {
   itemNoNormalized  String     @unique
   description       String?
   class             String?
+  /** Raw numeric lifecycle code from the source file's "Status" column (e.g. 15=Active,
+   *  40=within guarantee, 70/80=obsolete-but-stocked, 99=Obsolete) — stored as-is, not
+   *  interpreted, since the app has no independent way to validate the business meaning. */
+  sourceStatus      Int?
   category          String?
   dimension         String?
   purchasePrice     Float?

@@ -1,9 +1,21 @@
 import type { ItemListRow } from "../api/items";
 
+// Source file's raw lifecycle code (column "Status", e.g. 15/40/70/80/99) — labels per the
+// business's own definition, not derived from anything the app computes.
+const SOURCE_STATUS_LABELS: Record<number, string> = {
+  15: "Active",
+  40: "Spareparts within their guarantee period",
+  70: "Obsolete parts but stock at EDC",
+  80: "Obsolete machines but stock at EDC",
+  99: "Obsolete",
+};
+
 const HEADER = [
   "No_",
   "Description",
   "Class",
+  "Status(E)",
+  "Status(E) Label",
   "Category",
   "AO",
   "AP",
@@ -49,6 +61,8 @@ export function exportCSV(rows: ItemListRow[]) {
         d.itemNoRaw,
         d.description,
         d.class,
+        d.sourceStatus ?? "",
+        d.sourceStatus != null ? SOURCE_STATUS_LABELS[d.sourceStatus] ?? "" : "",
         d.category,
         hist[0]?.qty ?? "",
         hist[1]?.qty ?? "",
