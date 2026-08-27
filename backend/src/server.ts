@@ -1,3 +1,4 @@
+import compression from "compression";
 import cors from "cors";
 import express from "express";
 import session from "express-session";
@@ -16,6 +17,10 @@ import { usersRouter } from "./routes/admin/users";
 const app = express();
 app.set("trust proxy", 1);
 app.use(cors({ origin: config.corsOrigin, credentials: true }));
+// The items list alone is 11k+ rows of JSON — gzip shrinks that kind of repetitive text payload
+// dramatically (typically 3-5x), which matters most on a high-latency connection where transfer
+// time dominates over the near-zero-latency case (localhost) this was never noticeable on.
+app.use(compression());
 app.use(express.json());
 
 const sessionPool = new Pool({

@@ -21,8 +21,11 @@ services:
           property: connectionString
       - key: SESSION_SECRET
         generateValue: true
+      # Comma-separated — both the Cloudflare Pages frontend (faster, closer to Thailand) and the
+      # original Render static site stay allowed during the migration; drop the Render one once
+      # Cloudflare Pages is confirmed working and DNS/bookmarks have moved over.
       - key: CORS_ORIGIN
-        value: https://spareparts-frontend.onrender.com
+        value: https://spare-parts-management.pages.dev,https://spareparts-frontend.onrender.com
       - key: NODE_ENV
         value: production
 
