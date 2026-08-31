@@ -16,6 +16,10 @@ const THAI_MONTHS = [
 /** offset 0 = current month, -1 = last month, +1 = next month, etc. */
 export function thaiMonthLabel(offsetFromNow: number): string {
   const d = new Date();
+  // Pin the day to 1 before shifting months — on the 29th-31st, setMonth() on a target month
+  // with fewer days overflows into the month after it (e.g. Aug 31 minus 6 months lands on Mar 3,
+  // not Feb, since Feb has no 31st), silently duplicating an adjacent month's label.
+  d.setDate(1);
   d.setMonth(d.getMonth() + offsetFromNow);
   return THAI_MONTHS[d.getMonth()];
 }
