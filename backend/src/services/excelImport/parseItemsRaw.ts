@@ -70,6 +70,20 @@ function toStringOrNull(v: unknown): string | null {
 }
 
 /**
+ * Snaps a value extremely close to an integer back to that integer. The source file's own
+ * derived stock columns (e.g. ST_N0, computed upstream by subtracting several sub-quantities)
+ * occasionally carry IEEE-754 floating-point residue — confirmed for real in the raw file itself
+ * (e.g. a cell read as 99.00000000000001 or 96.99999999999999), not something this importer
+ * introduces. That residue is physically meaningless for a unit count ("ชิ้น"), so it's cleaned
+ * up here. The 1e-6 tolerance is far tighter than any real fractional quantity these fields could
+ * ever hold, so a genuinely fractional value (if one ever appears) is left untouched.
+ */
+function snapToInteger(n: number): number {
+  const rounded = Math.round(n);
+  return Math.abs(n - rounded) < 1e-6 ? rounded : n;
+}
+
+/**
  * Mirrors the original's normHdr(): case/whitespace-insensitive header comparison, so a
  * re-exported file with e.g. "pur. price" or a stray non-breaking space doesn't hard-fail an
  * import that the original tool would have accepted without complaint. The exact-name safety
@@ -165,11 +179,11 @@ export function parseItemsRawWorkbook(buffer: Buffer): ParseResult {
     const usageHistory = USAGE_MONTH_HEADERS.map((label, monthIndex) => ({
       monthIndex,
       periodLabel: label,
-      qty: Math.max(0, toNumber(raw[colIndex[label]])),
+      qty: snapToInteger(Math.max(0, toNumber(raw[colIndex[label]]))),
     }));
     const yearlySales = YEARLY_HEADERS.map((label) => ({
       year: Number(label.split("-")[1]),
-      qty: Math.max(0, toNumber(raw[colIndex[label]])),
+      qty: snapToInteger(Math.max(0, toNumber(raw[colIndex[label]]))),
     }));
 
     rowsByItemNo.set(itemNoNormalized, {
@@ -184,8 +198,8 @@ export function parseItemsRawWorkbook(buffer: Buffer): ParseResult {
       unitCost: toNumberOrNull(raw[colIndex["Unit Cost"]]),
       vendor: toStringOrNull(raw[colIndex["Vendor No_"]]),
       poQty: toNumber(raw[colIndex["PO_N0"]]),
-      stockQty: toNumber(raw[colIndex["ST_N0"]]),
-      backorderQty: toNumber(raw[colIndex["BO QTY"]]),
+      stockQty: snapToInteger(toNumber(raw[colIndex["ST_N0"]])),
+      backorderQty: snapToInteger(toNumber(raw[colIndex["BO QTY"]])),
       yearlySales,
       usageHistory,
       leadTimeDays: toNumberOrNull(raw[colIndex["Lead time Calculation"]]),
