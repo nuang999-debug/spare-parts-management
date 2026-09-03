@@ -119,15 +119,15 @@ export function buildNarrative(item: ItemDetail, a: ItemAnalysis): NarrativeSect
   } else if (belowCount === 0) {
     riskRuns = [
       b("ความเสี่ยงต่ำ", "var(--success)"),
-      t(" — Stock คาดการณ์ทั้ง 5 เดือนข้างหน้ายังคงอยู่"),
+      t(" — Stock คาดการณ์ทั้งเดือนนี้และ 5 เดือนข้างหน้ายังคงอยู่"),
       b("เหนือ Sum MIN"),
       t(` (${fmt(sumMin, 0)}) ตลอด ไม่มีความจำเป็นเร่งด่วน`),
     ];
-  } else if (belowCount === 5) {
+  } else if (belowCount === 6) {
     riskRuns = [
       b("ความเสี่ยงสูงมาก", "var(--danger)"),
       t(" — Stock คาดการณ์"),
-      b("ต่ำกว่า Sum MIN ตลอดทั้ง 5 เดือน"),
+      b("ต่ำกว่า Sum MIN ตลอดทั้งเดือนนี้และ 5 เดือนข้างหน้า"),
       t(` เริ่มตั้งแต่ ${a.triggerMonthLabel} หากไม่ดำเนินการจะขาดสต็อกต่อเนื่อง`),
     ];
   } else {
@@ -135,19 +135,19 @@ export function buildNarrative(item: ItemDetail, a: ItemAnalysis): NarrativeSect
     // later bucket, so a below-MIN month doesn't guarantee every month after it stays below too
     // — "ตั้งแต่เดือน X เป็นต้นไป" (continuously from month X onward) would misstate that as fact
     // whenever there's a recovery-then-dip in between. Only claim continuity when it's real.
-    const isContinuousFromTrigger = a.next.slice(a.triggerMonth - 1).every((v) => v < sumMin);
+    const isContinuousFromTrigger = a.next.slice(a.triggerMonth).every((v) => v < sumMin);
     riskRuns = isContinuousFromTrigger
       ? [
           b("ความเสี่ยงปานกลางถึงสูง", "var(--warning)"),
           t(` — Stock จะตกลงต่ำกว่า Sum MIN (${fmt(sumMin, 0)}) ตั้งแต่เดือน `),
           b(a.triggerMonthLabel),
-          t(` เป็นต้นไป (รวม ${belowCount}/5 เดือนที่ต่ำกว่าเกณฑ์)`),
+          t(` เป็นต้นไป (รวม ${belowCount}/6 เดือนที่ต่ำกว่าเกณฑ์)`),
         ]
       : [
           b("ความเสี่ยงปานกลางถึงสูง", "var(--warning)"),
           t(` — Stock จะตกลงต่ำกว่า Sum MIN (${fmt(sumMin, 0)}) ในบางช่วง เริ่มที่เดือน `),
           b(a.triggerMonthLabel),
-          t(` (รวม ${belowCount}/5 เดือนที่ต่ำกว่าเกณฑ์ ไม่ต่อเนื่องกันทั้งหมด เนื่องจากมี PO เข้าคั่นกลาง)`),
+          t(` (รวม ${belowCount}/6 เดือนที่ต่ำกว่าเกณฑ์ ไม่ต่อเนื่องกันทั้งหมด เนื่องจากมี PO เข้าคั่นกลาง)`),
         ];
   }
   section2.push({ kind: "para", runs: riskRuns });
@@ -161,7 +161,7 @@ export function buildNarrative(item: ItemDetail, a: ItemAnalysis): NarrativeSect
       ],
     });
   }
-  sections.push({ title: "2. ประเมินความเสี่ยง Stock (5 เดือนข้างหน้า)", blocks: section2 });
+  sections.push({ title: "2. ประเมินความเสี่ยง Stock (เดือนนี้ถึง 5 เดือนข้างหน้า)", blocks: section2 });
 
   // ── 3. เหตุผลและจำนวนที่ควรสั่งซื้อ ──
   const section3: NarrativeBlock[] = [];
@@ -413,13 +413,14 @@ export function buildNarrative(item: ItemDetail, a: ItemAnalysis): NarrativeSect
 export function buildPlanReasons(item: ItemDetail, a: ItemAnalysis): Run[][] {
   const sumMin = item.sumMin ?? 0;
   if (a.triggerMonth < 0) {
-    return [[t(`Stock คาดการณ์ทั้ง 5 เดือนข้างหน้า ยังสูงกว่า Sum MIN (BC) = ${fmt(sumMin, 0)} ทุกเดือน`)]];
+    return [[t(`Stock คาดการณ์ทั้งเดือนนี้และ 5 เดือนข้างหน้า ยังสูงกว่า Sum MIN (BC) = ${fmt(sumMin, 0)} ทุกเดือน`)]];
   }
 
+  const triggerMonthWithLetter = a.triggerLetter ? `${a.triggerMonthLabel} (${a.triggerLetter})` : a.triggerMonthLabel;
   const reasons: Run[][] = [
     [
       t("Stock คาดการณ์เดือน "),
-      b(`${a.triggerMonthLabel} (${a.triggerLetter})`),
+      b(triggerMonthWithLetter),
       t(" = "),
       b(fmtN(a.triggerValue, 1), "var(--danger)"),
       t(" ต่ำกว่า Sum MIN (BC) = "),
@@ -471,12 +472,12 @@ export function buildSuggestions(item: ItemDetail, a: ItemAnalysis): Suggestion[
   if (item.calcStatus === "DANGER") {
     suggestions.push({
       icon: "🚨",
-      text: `วิกฤต — Next-1/BH (${fmtN(a.next[0], 1)}) ต่ำกว่า Sum MIN/BC (${fmt(item.sumMin, 0)})`,
+      text: `วิกฤต — Next-0 (${fmtN(a.next[0], 1)}) ต่ำกว่า Sum MIN/BC (${fmt(item.sumMin, 0)})`,
     });
   } else if (item.calcStatus === "WARN") {
     suggestions.push({
       icon: "⚠️",
-      text: `Next-2/BI (${fmtN(a.next[1], 1)}) ใกล้ Sum MIN/BC (${fmt(item.sumMin, 0)})`,
+      text: `Next-1/BH (${fmtN(a.next[1], 1)}) ใกล้ Sum MIN/BC (${fmt(item.sumMin, 0)})`,
     });
   } else {
     suggestions.push({ icon: "✅", text: "Stock อยู่ในระดับปกติ" });

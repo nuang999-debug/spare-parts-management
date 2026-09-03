@@ -30,6 +30,7 @@ const LIST_SELECT = {
   avgMonth: true,
   oldMin: true,
   sumMin: true,
+  next0: true,
   next1: true,
   next2: true,
   next3: true,

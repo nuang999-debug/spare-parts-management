@@ -107,6 +107,7 @@ model Item {
   oldMin            Float?
   sumMin            Float?
 
+  next0             Float?
   next1             Float?
   next2             Float?
   next3             Float?

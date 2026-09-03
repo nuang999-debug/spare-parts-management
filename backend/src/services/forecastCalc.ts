@@ -17,32 +17,36 @@ export function computeMaxUsage(hist13: number[]): number {
 }
 
 /**
- * poByBucket[i] is outstanding PO qty due in forecast month i+1 (1-5).
- * With no Purchase Lines import yet, callers pass all outstanding PO in bucket 1
- * (index 0) and zero elsewhere, matching the old app's fallback.
+ * poByBucket[i] is outstanding PO qty due in forecast month i (0-5) — bucket 0 is "this month"
+ * (overdue or due within the current month), bucket 1 is next month, etc. Index i lines up
+ * directly with the forecast month number, so result[i] is NEXT-i (no +1/-1 offset anywhere).
+ * With no Purchase Lines import yet, callers pass all outstanding PO in bucket 1 and zero
+ * elsewhere, matching the old app's fallback.
  */
 export function computeNextForecast(
   stockQty: number,
-  poByBucket: [number, number, number, number, number],
+  poByBucket: [number, number, number, number, number, number],
   avgMonth: number
-): [number, number, number, number, number] {
+): [number, number, number, number, number, number] {
   const result: number[] = [];
   let running = stockQty;
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 6; i++) {
     running = running + poByBucket[i] - avgMonth;
     result.push(running);
   }
-  return result as [number, number, number, number, number];
+  return result as [number, number, number, number, number, number];
 }
 
 // DANGER/WARN is deliberately scoped to items that actually have a Sum MIN (reorder threshold)
 // set — order planning only applies to the group management has chosen to plan reorders for.
 // (A version of this briefly also flagged a negative forecast as DANGER even with no Sum MIN
 // set; reverted on request since that pulled non-managed items into "ต้องสั่งซื้อ"/Planning.)
-export function computeStatus(next1: number, next2: number, sumMin: number | null): CalcStatus {
+// Thresholds moved from Next-1/Next-2 to Next-0/Next-1 when Next-0 (current month) was added, so
+// the alert reflects the month the item is actually short in, not one month later than reality.
+export function computeStatus(next0: number, next1: number, sumMin: number | null): CalcStatus {
   if (!sumMin || sumMin <= 0) return "OK";
-  if (next1 < sumMin) return "DANGER";
-  if (next2 < sumMin) return "WARN";
+  if (next0 < sumMin) return "DANGER";
+  if (next1 < sumMin) return "WARN";
   return "OK";
 }
 
@@ -60,7 +64,7 @@ export function computeTrend(hist6: number[]): CalcTrend {
 }
 
 export interface SuggestedOrder {
-  triggerMonth: number; // 1-5, or -1 if no trigger within the 5-month horizon
+  triggerMonth: number; // 0-5 (0 = this month), or -1 if no trigger within the horizon
   orderQty: number;
 }
 
@@ -71,7 +75,7 @@ export function computeSuggestedOrder(
   if (sumMin && sumMin > 0) {
     for (let i = 0; i < nextForecast.length; i++) {
       if (nextForecast[i] < sumMin) {
-        return { triggerMonth: i + 1, orderQty: Math.max(0, Math.ceil(sumMin - nextForecast[i])) };
+        return { triggerMonth: i, orderQty: Math.max(0, Math.ceil(sumMin - nextForecast[i])) };
       }
     }
   }
@@ -83,7 +87,7 @@ export function computeMustOrderByDate(
   leadTimeDays: number | null,
   today: Date
 ): Date | null {
-  if (triggerMonth < 1) return null;
+  if (triggerMonth < 0) return null;
   const daysToTrigger = triggerMonth * 30;
   const mustOrderByDays = Math.max(0, daysToTrigger - (leadTimeDays ?? 0));
   return new Date(today.getTime() + mustOrderByDays * 86_400_000);

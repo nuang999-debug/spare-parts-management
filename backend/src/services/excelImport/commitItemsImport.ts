@@ -59,7 +59,7 @@ function computeItemData(
   // Purchase Line data is the primary PO source now — an item missing from the latest
   // Purchase Lines batch has no outstanding PO (0), not a fallback to the Items file's own
   // (potentially stale) PO_N0 column.
-  const poBuckets = ctx.poBuckets.get(row.itemNoNormalized) ?? [0, 0, 0, 0, 0];
+  const poBuckets = ctx.poBuckets.get(row.itemNoNormalized) ?? [0, 0, 0, 0, 0, 0];
   const next = computeNextForecast(row.stockQty, poBuckets, avgMonth6);
   const calcStatus = computeStatus(next[0], next[1], row.sumMin);
   const calcTrend = computeTrend(hist6);
@@ -94,11 +94,12 @@ function computeItemData(
     maxUsage,
     oldMin: row.oldMin,
     sumMin: row.sumMin,
-    next1: next[0],
-    next2: next[1],
-    next3: next[2],
-    next4: next[3],
-    next5: next[4],
+    next0: next[0],
+    next1: next[1],
+    next2: next[2],
+    next3: next[3],
+    next4: next[4],
+    next5: next[5],
     calcStatus,
     calcTrend,
     recommendedMin,

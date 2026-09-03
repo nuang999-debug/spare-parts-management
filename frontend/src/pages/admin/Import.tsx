@@ -158,7 +158,7 @@ function PurchaseLinesImportSection() {
   return (
     <section style={{ marginTop: "2.5rem" }}>
       <h2>Import Purchase Lines</h2>
-      <p>Upload the latest "PO Due" / Purchase Lines export (.xlsx) to reallocate the Next-1..5 forecast by due date.</p>
+      <p>Upload the latest "PO Due" / Purchase Lines export (.xlsx) to reallocate the Next-0..5 forecast by due date.</p>
 
       <input type="file" accept=".xlsx" onChange={handleFileChange} />
       <div style={{ marginTop: "0.75rem", display: "flex", gap: "0.5rem" }}>

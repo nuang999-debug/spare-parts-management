@@ -154,11 +154,12 @@ export default function SummaryTab({ onGoToItem }: { onGoToItem: (itemNoRaw: str
 
   const stockVsNext = [
     { label: "ปัจจุบัน", value: totalStock, isCurrent: true },
-    { label: "Next-1", value: totalNext[0], isCurrent: false },
-    { label: "Next-2", value: totalNext[1], isCurrent: false },
-    { label: "Next-3", value: totalNext[2], isCurrent: false },
-    { label: "Next-4", value: totalNext[3], isCurrent: false },
-    { label: "Next-5", value: totalNext[4], isCurrent: false },
+    { label: "Next-0", value: totalNext[0], isCurrent: false },
+    { label: "Next-1", value: totalNext[1], isCurrent: false },
+    { label: "Next-2", value: totalNext[2], isCurrent: false },
+    { label: "Next-3", value: totalNext[3], isCurrent: false },
+    { label: "Next-4", value: totalNext[4], isCurrent: false },
+    { label: "Next-5", value: totalNext[5], isCurrent: false },
   ].map((d) => ({ ...d, pct: sumMinTotal > 0 ? ((d.value - sumMinTotal) / sumMinTotal) * 100 : 0 }));
 
   function StockVsNextPctLabel(props: { x?: string | number; y?: string | number; width?: string | number; index?: number }) {
@@ -363,7 +364,7 @@ export default function SummaryTab({ onGoToItem }: { onGoToItem: (itemNoRaw: str
         </div>
 
         <div className="sum-sec">
-          <div className="sum-sec-hd">📐 Stock ปัจจุบัน vs คาดการณ์ Next-1..5 (รวมทั้งหมด)</div>
+          <div className="sum-sec-hd">📐 Stock ปัจจุบัน vs คาดการณ์ Next-0..5 (รวมทั้งหมด)</div>
           <div className="sum-sec-bd">
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={stockVsNext} margin={{ top: 24 }}>
@@ -415,7 +416,7 @@ export default function SummaryTab({ onGoToItem }: { onGoToItem: (itemNoRaw: str
 
       <div className="sum-three">
         <div className="sum-sec">
-          <div className="sum-sec-hd">แนวโน้ม Inventory (AO-AT + Next-1..5)</div>
+          <div className="sum-sec-hd">แนวโน้ม Inventory (AO-AT + Next-0..5)</div>
           <div className="sum-sec-bd">
             <div style={{ fontSize: "0.65rem", color: "var(--text-muted)", marginBottom: "0.3rem" }}>
               แนวโน้ม 6 เดือน (AO-AT)
@@ -441,7 +442,7 @@ export default function SummaryTab({ onGoToItem }: { onGoToItem: (itemNoRaw: str
               </div>
             </div>
             <div style={{ fontSize: "0.65rem", color: "var(--text-muted)", marginBottom: "0.3rem" }}>
-              คาดการณ์ Stock (Next-1)
+              คาดการณ์ Stock (Next-0)
             </div>
             <p style={{ fontSize: "0.85rem", marginBottom: "0.5rem" }}>
               {invTrend === "up" ? "📈 " : invTrend === "down" ? "📉 " : "➡️ "}

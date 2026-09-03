@@ -9,9 +9,9 @@ describe("computeBucketMonth", () => {
     expect(computeBucketMonth(null, today)).toBe(1);
   });
 
-  it("buckets overdue and this/next-month receipts into Next-1", () => {
-    expect(computeBucketMonth(new Date(2026, 5, 1), today)).toBe(1); // last month
-    expect(computeBucketMonth(new Date(2026, 6, 30), today)).toBe(1); // this month
+  it("buckets overdue and this-month receipts into Next-0, next-month into Next-1", () => {
+    expect(computeBucketMonth(new Date(2026, 5, 1), today)).toBe(0); // last month (overdue)
+    expect(computeBucketMonth(new Date(2026, 6, 30), today)).toBe(0); // this month
     expect(computeBucketMonth(new Date(2026, 7, 15), today)).toBe(1); // next month
   });
 

@@ -105,10 +105,10 @@ const historyColumns = HISTORY_LETTERS.map((letter, i) =>
   })
 );
 
-const nextColumn = (n: 1 | 2 | 3 | 4 | 5, letter: string) =>
+const nextColumn = (n: 0 | 1 | 2 | 3 | 4 | 5, letter: string) =>
   columnHelper.accessor(`next${n}`, {
     id: `next${n}`,
-    header: `NEXT-${n} (${letter}) ${thaiMonthLabel(n)}`,
+    header: letter ? `NEXT-${n} (${letter}) ${thaiMonthLabel(n)}` : `NEXT-${n} ${thaiMonthLabel(n)}`,
     size: 100,
     filterFn: gteFilter,
     meta: { filterType: "gte" },
@@ -231,6 +231,7 @@ const columns = [
       />
     ),
   }),
+  nextColumn(0, ""),
   nextColumn(1, "BH"),
   nextColumn(2, "BI"),
   nextColumn(3, "BJ"),

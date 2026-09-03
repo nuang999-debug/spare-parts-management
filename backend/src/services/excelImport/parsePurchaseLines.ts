@@ -77,18 +77,21 @@ function parseDate(v: unknown): Date | null {
 }
 
 /**
- * No date -> bucket 1 (matches the old app's fallback for undated lines).
- * Bucketed by calendar-month difference from today (not day-count / 30), matching the
- * original app's poMonthBucket(): diff<=1 (this month, next month, or overdue) -> bucket 1;
+ * No date -> bucket 1, not 0 (matches the old app's fallback for undated lines — kept exactly as
+ * it was when Next-0 was introduced, since an unknown receipt date isn't a confirmed "this month"
+ * commitment the way a real overdue/this-month date is).
+ * Bucketed by calendar-month difference from today (not day-count / 30), matching the original
+ * app's poMonthBucket(): diff<=0 (this month or overdue) -> bucket 0; diff===1 -> bucket 1;
  * diff 2..5 -> that bucket; diff>5 -> excluded (null), so a far-future PO doesn't overstate
- * near-term supply in the Next-1..5 forecast.
+ * near-term supply in the Next-0..5 forecast.
  */
 export function computeBucketMonth(expectedReceiptDate: Date | null, today: Date): number | null {
   if (!expectedReceiptDate) return 1;
   const diff =
     (expectedReceiptDate.getFullYear() - today.getFullYear()) * 12 +
     (expectedReceiptDate.getMonth() - today.getMonth());
-  if (diff <= 1) return 1;
+  if (diff <= 0) return 0;
+  if (diff === 1) return 1;
   if (diff <= 5) return diff;
   return null;
 }

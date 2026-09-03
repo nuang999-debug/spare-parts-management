@@ -33,6 +33,7 @@ export interface ItemListRow {
   avgMonth: number | null;
   oldMin: number | null;
   sumMin: number | null;
+  next0: number | null;
   next1: number | null;
   next2: number | null;
   next3: number | null;

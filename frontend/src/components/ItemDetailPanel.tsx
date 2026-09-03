@@ -37,7 +37,9 @@ const TOOLTIP_STYLE = {
 const TOOLTIP_ITEM_STYLE = { color: TOOLTIP_STYLE.color };
 const TOOLTIP_LABEL_STYLE = { color: TOOLTIP_STYLE.color };
 const AXIS_TICK = { fontSize: 11, fill: CHART_MUTED };
-const NEXT_LETTERS = ["BH", "BI", "BJ", "BK", "BL"];
+// Index 0 (NEXT-0, "this month") has no letter of its own — a new concept the original
+// spreadsheet never had a column for. Index 1-5 keep the original BH-BL letters.
+const NEXT_LETTERS = ["", "BH", "BI", "BJ", "BK", "BL"];
 
 /** Unstyled <b> defaults to accent2 — mirrors the original's `.da-text b { color: var(--acc2) }`. */
 function RichRuns({ runs }: { runs: Run[] }) {
@@ -219,7 +221,7 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
           qty: h.qty,
         }));
         const forecastChartData = a.next.map((v, i) => ({
-          label: `${NEXT_LETTERS[i]} ${thaiMonthLabel(i + 1)}`,
+          label: `${NEXT_LETTERS[i]} ${thaiMonthLabel(i)}`.trim(),
           value: v,
         }));
 
@@ -256,9 +258,10 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
           ["Sum MIN ✦ (BC)", fmt(item.sumMin, 0)],
           ["PR qty suggested (calc.)", fmt(item.prQtySuggested, 0)],
           ["PR qty current (BG)", fmt(item.prQtyCurrent, 0)],
-          ...([1, 2, 3, 4, 5] as const).map(
-            (n): [string, string] => [`Next-${n} (${NEXT_LETTERS[n - 1]}) ${thaiMonthLabel(n)}`, fmtN(a.next[n - 1], 1)]
-          ),
+          ...([0, 1, 2, 3, 4, 5] as const).map((n): [string, string] => [
+            NEXT_LETTERS[n] ? `Next-${n} (${NEXT_LETTERS[n]}) ${thaiMonthLabel(n)}` : `Next-${n} ${thaiMonthLabel(n)}`,
+            fmtN(a.next[n], 1),
+          ]),
           ["Remark (BM)", item.remark ?? "-"],
           ["For Model (BN)", item.forModel ?? "-"],
         ];
@@ -418,7 +421,7 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
               </section>
 
               <section className="detail-chart-card">
-                <h3>NEXT-1→5 vs SUM MIN (BC)</h3>
+                <h3>NEXT-0→5 vs SUM MIN (BC)</h3>
                 <div className="whatif-pr-row">
                   <label htmlFor="whatif-pr-input">PR qty (ทดลอง)</label>
                   <input
@@ -436,8 +439,8 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
                 </div>
                 <p className="whatif-pr-hint">
                   {whatIfPrQty > 0
-                    ? `ถ้า PR ${fmtN(whatIfPrQty, 0)} หน่วยนี้เข้าจริง จะถึงมือประมาณ Next-${whatIfBucketMonth} (ตาม Lead Time ${item.leadTimeDays ?? "—"} วัน) — ค่า Next-1..5 จริงยังไม่เปลี่ยน จนกว่าจะมี PO ยืนยันจริง`
-                    : "พิมพ์จำนวน PR เพื่อดูตัวอย่างผลกระทบต่อ Next-1..5 (ไม่บันทึกจริง)"}
+                    ? `ถ้า PR ${fmtN(whatIfPrQty, 0)} หน่วยนี้เข้าจริง จะถึงมือประมาณ Next-${whatIfBucketMonth} (ตาม Lead Time ${item.leadTimeDays ?? "—"} วัน) — ค่า Next-0..5 จริงยังไม่เปลี่ยน จนกว่าจะมี PO ยืนยันจริง`
+                    : "พิมพ์จำนวน PR เพื่อดูตัวอย่างผลกระทบต่อ Next-0..5 (ไม่บันทึกจริง)"}
                 </p>
                 <div className="next-bar-list">
                   <div className="next-bar-header">
@@ -450,7 +453,7 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
                     return (
                       <div className="next-bar-row" key={i}>
                         <span className="next-bar-label">
-                          {NEXT_LETTERS[i]} {thaiMonthLabel(i + 1)}
+                          {NEXT_LETTERS[i]} {thaiMonthLabel(i)}
                         </span>
                         <div className="next-bar-track">
                           <div className={`next-bar-fill tone-${tone}`} style={{ width: `${widthPct}%` }} />
@@ -475,7 +478,7 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
             <section className="plan-card">
               <h3 className="plan-card-title">🤖 แผนการสั่งซื้อที่แนะนำ</h3>
 
-              {a.triggerMonth > 0 ? (
+              {a.triggerMonth >= 0 ? (
                 <>
                   <div className={`plan-banner tone-${a.urgency.tone}`}>
                     <div>
@@ -504,7 +507,8 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
                     <div className="kpi">
                       <span className="kpi-label">เดือนที่ Stock ต่ำกว่า MIN</span>
                       <span className="kpi-value tone-danger">
-                        {a.triggerMonthLabel} ({a.triggerLetter})
+                        {a.triggerMonthLabel}
+                        {a.triggerLetter ? ` (${a.triggerLetter})` : ""}
                       </span>
                       <span className="kpi-sub">
                         {fmtN(a.triggerValue, 1)} &lt; {fmt(item.sumMin, 0)}
@@ -522,9 +526,9 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
                   </div>
                   <div className="plan-timeline-label">ไทม์ไลน์</div>
                   <div className="plan-timeline">
-                    {([1, 2, 3, 4, 5] as const).map((n) => {
+                    {([0, 1, 2, 3, 4, 5] as const).map((n) => {
                       const isTrigger = n === a.triggerMonth;
-                      const belowMin = item.sumMin != null && item.sumMin > 0 && a.next[n - 1] < item.sumMin;
+                      const belowMin = item.sumMin != null && item.sumMin > 0 && a.next[n] < item.sumMin;
                       const cls = isTrigger ? "trigger" : belowMin ? "below" : "above";
                       return (
                         <div key={n} className={`timeline-tab ${cls}`}>
@@ -552,7 +556,7 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
                   </div>
                 </>
               ) : (
-                <p className="plan-ok">✅ สถานะปกติ — ไม่มีความจำเป็นต้องสั่งซื้อในช่วง 5 เดือนข้างหน้า</p>
+                <p className="plan-ok">✅ สถานะปกติ — ไม่มีความจำเป็นต้องสั่งซื้อในช่วงเดือนนี้ถึง 5 เดือนข้างหน้า</p>
               )}
 
               {suggestions.length > 0 && (

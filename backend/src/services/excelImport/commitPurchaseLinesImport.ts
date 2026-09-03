@@ -98,13 +98,13 @@ export async function commitPurchaseLinesImport(params: {
     });
   }
 
-  const poBucketsByNo = new Map<string, [number, number, number, number, number]>();
+  const poBucketsByNo = new Map<string, [number, number, number, number, number, number]>();
   const poTotalsByNo = new Map<string, number>();
   for (const row of convertedRows) {
     poTotalsByNo.set(row.itemNoNormalized, (poTotalsByNo.get(row.itemNoNormalized) ?? 0) + row.outstandingQty);
     if (row.bucketMonth == null) continue; // beyond the 5-month forecast horizon
-    const buckets = poBucketsByNo.get(row.itemNoNormalized) ?? [0, 0, 0, 0, 0];
-    buckets[row.bucketMonth - 1] += row.outstandingQty;
+    const buckets = poBucketsByNo.get(row.itemNoNormalized) ?? [0, 0, 0, 0, 0, 0];
+    buckets[row.bucketMonth] += row.outstandingQty;
     poBucketsByNo.set(row.itemNoNormalized, buckets);
   }
 
@@ -136,7 +136,7 @@ export async function commitPurchaseLinesImport(params: {
           });
           for (const item of itemChunk) {
             const poQty = poTotalsByNo.get(item.itemNoNormalized) ?? 0;
-            const poBuckets = poBucketsByNo.get(item.itemNoNormalized) ?? [0, 0, 0, 0, 0];
+            const poBuckets = poBucketsByNo.get(item.itemNoNormalized) ?? [0, 0, 0, 0, 0, 0];
             const next = computeNextForecast(item.stockQty, poBuckets, item.avgMonth6 ?? 0);
             const calcStatus = computeStatus(next[0], next[1], item.sumMin);
             const suggestion = computeSuggestedOrder(next, item.sumMin);
@@ -153,11 +153,12 @@ export async function commitPurchaseLinesImport(params: {
               where: { id: item.id },
               data: {
                 poQty,
-                next1: next[0],
-                next2: next[1],
-                next3: next[2],
-                next4: next[3],
-                next5: next[4],
+                next0: next[0],
+                next1: next[1],
+                next2: next[2],
+                next3: next[3],
+                next4: next[4],
+                next5: next[5],
                 calcStatus,
                 suggestedOrderQty: suggestion.orderQty,
                 mustOrderByDate,

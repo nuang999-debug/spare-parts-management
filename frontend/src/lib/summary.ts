@@ -37,7 +37,7 @@ export interface SummaryData {
   upTrend: number;
   downTrend: number;
   flatTrend: number;
-  totalNext: [number, number, number, number, number];
+  totalNext: [number, number, number, number, number, number];
   sumMinTotal: number;
   contItems: ItemListRow[];
   discItems: ItemListRow[];
@@ -95,7 +95,8 @@ export function buildSummaryData(items: ItemListRow[]): SummaryData {
   const downTrend = base.filter((d) => d.calcTrend === "DOWN").length;
   const flatTrend = base.length - upTrend - downTrend;
 
-  const totalNext: [number, number, number, number, number] = [
+  const totalNext: [number, number, number, number, number, number] = [
+    base.reduce((s, d) => s + (d.next0 ?? 0), 0),
     base.reduce((s, d) => s + (d.next1 ?? 0), 0),
     base.reduce((s, d) => s + (d.next2 ?? 0), 0),
     base.reduce((s, d) => s + (d.next3 ?? 0), 0),
@@ -205,11 +206,11 @@ export interface MonthsToNormal {
   value?: number;
 }
 
-/** First month (0=current, 1-5=Next-1..5) where the projected total stock reaches Sum MIN total. */
+/** First point (0=current, 1=Next-0, 2-6=Next-1..5) where the projected total stock reaches Sum MIN total. */
 export function calcMonthsToNormal(currentStock: number, totalNext: number[], sumMinTotal: number): MonthsToNormal | null {
   if (sumMinTotal <= 0) return null;
   const totals = [currentStock, ...totalNext];
-  const labels = ["ปัจจุบัน", "Next-1", "Next-2", "Next-3", "Next-4", "Next-5"];
+  const labels = ["ปัจจุบัน", "Next-0", "Next-1", "Next-2", "Next-3", "Next-4", "Next-5"];
   for (let i = 0; i < totals.length; i++) {
     if (totals[i] >= sumMinTotal) {
       return { monthIdx: i, label: labels[i], found: true, value: totals[i] };

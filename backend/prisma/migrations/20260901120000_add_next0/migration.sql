@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "items" ADD COLUMN "next0" DOUBLE PRECISION;

@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 
-export type PoBucketsMap = Map<string, [number, number, number, number, number]>;
+export type PoBucketsMap = Map<string, [number, number, number, number, number, number]>;
 
 export interface LatestPoData {
   /** Outstanding PO qty by item, bucketed into forecast months 1-5, from the most recently
@@ -30,10 +30,10 @@ export async function loadLatestPoData(tx: Prisma.TransactionClient): Promise<La
   });
   for (const line of lines) {
     totals.set(line.itemNoNormalized, (totals.get(line.itemNoNormalized) ?? 0) + line.outstandingQty);
-    if (!line.bucketMonth || line.bucketMonth < 1 || line.bucketMonth > 5) continue;
-    const existing = buckets.get(line.itemNoNormalized) ?? [0, 0, 0, 0, 0];
-    existing[line.bucketMonth - 1] += line.outstandingQty;
-    buckets.set(line.itemNoNormalized, existing as [number, number, number, number, number]);
+    if (line.bucketMonth == null || line.bucketMonth < 0 || line.bucketMonth > 5) continue;
+    const existing = buckets.get(line.itemNoNormalized) ?? [0, 0, 0, 0, 0, 0];
+    existing[line.bucketMonth] += line.outstandingQty;
+    buckets.set(line.itemNoNormalized, existing as [number, number, number, number, number, number]);
   }
   return { buckets, totals };
 }

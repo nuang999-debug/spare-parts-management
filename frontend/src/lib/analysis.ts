@@ -12,7 +12,7 @@ export function stdev(values: number[]): number {
 }
 
 export interface TriggerResult {
-  triggerMonth: number; // 1-5, or -1 if no trigger within the 5-month horizon
+  triggerMonth: number; // 0-5 (0 = this month), or -1 if no trigger within the horizon
   orderQty: number;
 }
 
@@ -21,7 +21,7 @@ export function findTrigger(next: number[], sumMin: number | null): TriggerResul
   if (sumMin && sumMin > 0) {
     for (let i = 0; i < next.length; i++) {
       if (next[i] < sumMin) {
-        return { triggerMonth: i + 1, orderQty: Math.max(0, Math.ceil(sumMin - next[i])) };
+        return { triggerMonth: i, orderQty: Math.max(0, Math.ceil(sumMin - next[i])) };
       }
     }
   }
@@ -31,9 +31,9 @@ export function findTrigger(next: number[], sumMin: number | null): TriggerResul
 export type Urgency = "danger" | "warn" | "info" | "ok";
 
 export function urgencyLabel(triggerMonth: number): { label: string; tone: Urgency } {
-  if (triggerMonth === 1) return { label: "สั่งด่วน!", tone: "danger" };
-  if (triggerMonth === 2) return { label: "ควรสั่งเร็วๆ นี้", tone: "warn" };
-  if (triggerMonth >= 3) return { label: "วางแผนสั่ง", tone: "info" };
+  if (triggerMonth === 0) return { label: "สั่งด่วน!", tone: "danger" };
+  if (triggerMonth === 1) return { label: "ควรสั่งเร็วๆ นี้", tone: "warn" };
+  if (triggerMonth >= 2) return { label: "วางแผนสั่ง", tone: "info" };
   return { label: "ยังไม่จำเป็น", tone: "ok" };
 }
 
@@ -78,12 +78,16 @@ export function minMonth(hist6: number[]): MonthExtreme {
 }
 
 export function mustOrderByDays(triggerMonth: number, leadTimeDays: number | null): number {
-  if (triggerMonth < 1) return 0;
+  if (triggerMonth < 0) return 0;
   return Math.max(0, triggerMonth * 30 - (leadTimeDays ?? 0));
 }
 
+// Thresholds aligned to the Syntetos-Boylan demand-classification literature, where the
+// erratic/lumpy cutoff sits at CV ~= 70% (CV^2 ~= 0.49) — the original 30/50% cutoffs were
+// tighter than that reference point, classifying most items (~75% of those with a Sum MIN) into
+// the highest safety-factor tier regardless of how volatile they actually were.
 export function safetyFactorFor(volatilityPct: number): number {
-  return volatilityPct > 50 ? 1.5 : volatilityPct > 30 ? 1.3 : 1.15;
+  return volatilityPct > 70 ? 1.5 : volatilityPct > 40 ? 1.3 : 1.15;
 }
 
 /**
@@ -99,7 +103,7 @@ export function whatIfBucket(leadTimeDays: number | null): number {
 
 export function computeWhatIfNext(next: readonly number[], leadTimeDays: number | null, prQty: number): number[] {
   const bucket = whatIfBucket(leadTimeDays);
-  return next.map((v, i) => (i + 1 >= bucket ? v + prQty : v));
+  return next.map((v, i) => (i >= bucket ? v + prQty : v));
 }
 
 export type CellTone = "ok" | "warn" | "danger";
@@ -132,20 +136,22 @@ export interface ItemAnalysis {
   min: MonthExtreme;
   daysToOrder: number;
   estimatedValue: number;
-  /** How many of Next-1..5 fall below Sum MIN (0-5) — drives the 4-tier risk assessment. */
+  /** How many of Next-0..5 fall below Sum MIN (0-6) — drives the 4-tier risk assessment. */
   belowMinCount: number;
 }
 
-const NEXT_LETTERS = ["BH", "BI", "BJ", "BK", "BL"];
+// Index 0 (NEXT-0, "this month") has no letter of its own — it's a new concept the original
+// spreadsheet never had a column for. Index 1-5 keep the original BH-BL letters.
+const NEXT_LETTERS = ["", "BH", "BI", "BJ", "BK", "BL"];
 
 export function analyzeItem(item: ItemDetail): ItemAnalysis {
   const hist13 = item.usageHistory.map((h) => h.qty);
   // The 6-month trend window (AO-AT) is M-6..M-1 — excludes the current/incomplete month M-0.
   const hist6 = hist13.slice(6, 12);
-  const next = [item.next1, item.next2, item.next3, item.next4, item.next5].map((v) => v ?? 0);
+  const next = [item.next0, item.next1, item.next2, item.next3, item.next4, item.next5].map((v) => v ?? 0);
 
   const { triggerMonth, orderQty } = findTrigger(next, item.sumMin);
-  const triggerValue = triggerMonth > 0 ? next[triggerMonth - 1] : null;
+  const triggerValue = triggerMonth >= 0 ? next[triggerMonth] : null;
   // prQtySuggested is the backend's orderQty already rounded up to the item's packing-unit
   // multiple (see backend applyPackingRule) — falls back to the raw orderQty when the item has
   // no active packing rule, since the backend then stores them equal.
@@ -159,8 +165,8 @@ export function analyzeItem(item: ItemDetail): ItemAnalysis {
     recommendedOrderQty,
     urgency: urgencyLabel(triggerMonth),
     triggerValue,
-    triggerMonthLabel: triggerMonth > 0 ? thaiMonthLabel(triggerMonth) : "-",
-    triggerLetter: triggerMonth > 0 ? NEXT_LETTERS[triggerMonth - 1] : "-",
+    triggerMonthLabel: triggerMonth >= 0 ? thaiMonthLabel(triggerMonth) : "-",
+    triggerLetter: triggerMonth >= 0 ? NEXT_LETTERS[triggerMonth] : "-",
     trendPct: trendPercent(hist6),
     volatilityPct: volatilityPercent(hist6, item.avgMonth ?? 0),
     nonZeroMonths: hist6.filter((v) => v > 0).length,

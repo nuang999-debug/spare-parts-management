@@ -38,20 +38,22 @@ describe("computeMinUsage / computeMaxUsage", () => {
 });
 
 describe("computeNextForecast", () => {
-  it("dumps all outstanding PO into bucket 1 when no Purchase Lines import exists", () => {
+  it("dumps all outstanding PO into bucket 0 when no Purchase Lines import exists", () => {
     const avgMonth = computeAvgMonth(HIST13);
-    const next = computeNextForecast(STOCK_QTY, [PO_QTY, 0, 0, 0, 0], avgMonth);
-    expect(next[0]).toBeCloseTo(101.5, 5);
+    const next = computeNextForecast(STOCK_QTY, [PO_QTY, 0, 0, 0, 0, 0], avgMonth);
+    expect(next[0]).toBeCloseTo(101.5, 5); // NEXT-0: 52 + 60 - 10.5
     expect(next[1]).toBeCloseTo(91, 5);
     expect(next[2]).toBeCloseTo(80.5, 5);
     expect(next[3]).toBeCloseTo(70, 5);
     expect(next[4]).toBeCloseTo(59.5, 5);
+    expect(next[5]).toBeCloseTo(49, 5);
   });
 
   it("reallocates PO due dates when buckets are spread out", () => {
-    const next = computeNextForecast(100, [0, 50, 0, 0, 0], 10);
-    expect(next[0]).toBe(90); // 100 + 0 - 10
-    expect(next[1]).toBe(130); // 90 + 50 - 10
+    const next = computeNextForecast(100, [0, 0, 50, 0, 0, 0], 10);
+    expect(next[0]).toBe(90); // NEXT-0: 100 + 0 - 10
+    expect(next[1]).toBe(80); // NEXT-1: 90 + 0 - 10
+    expect(next[2]).toBe(120); // NEXT-2: 80 + 50 - 10
   });
 });
 
@@ -61,17 +63,17 @@ describe("computeStatus", () => {
     expect(computeStatus(0, 0, 0)).toBe("OK");
   });
 
-  it("is DANGER when Next-1 falls below Sum MIN", () => {
+  it("is DANGER when Next-0 falls below Sum MIN", () => {
     expect(computeStatus(30, 90, 40)).toBe("DANGER");
   });
 
-  it("is WARN when Next-1 is fine but Next-2 falls below Sum MIN", () => {
+  it("is WARN when Next-0 is fine but Next-1 falls below Sum MIN", () => {
     expect(computeStatus(50, 30, 40)).toBe("WARN");
   });
 
   it("is OK for the real 010 3098 500 example (well above Sum MIN)", () => {
     const avgMonth = computeAvgMonth(HIST13);
-    const next = computeNextForecast(STOCK_QTY, [PO_QTY, 0, 0, 0, 0], avgMonth);
+    const next = computeNextForecast(STOCK_QTY, [PO_QTY, 0, 0, 0, 0, 0], avgMonth);
     expect(computeStatus(next[0], next[1], SUM_MIN)).toBe("OK");
   });
 
@@ -84,13 +86,20 @@ describe("computeStatus", () => {
 describe("computeSuggestedOrder", () => {
   it("returns no trigger when forecasted stock never dips below Sum MIN", () => {
     const avgMonth = computeAvgMonth(HIST13);
-    const next = computeNextForecast(STOCK_QTY, [PO_QTY, 0, 0, 0, 0], avgMonth);
+    const next = computeNextForecast(STOCK_QTY, [PO_QTY, 0, 0, 0, 0, 0], avgMonth);
     expect(computeSuggestedOrder(next, SUM_MIN)).toEqual({ triggerMonth: -1, orderQty: 0 });
   });
 
   it("suggests the shortfall at the first month that dips below Sum MIN", () => {
-    expect(computeSuggestedOrder([50, 30, 20, 10, 5], 40)).toEqual({
-      triggerMonth: 2,
+    expect(computeSuggestedOrder([50, 30, 20, 10, 5, 0], 40)).toEqual({
+      triggerMonth: 1, // index 1 (NEXT-1) is the first below 40
+      orderQty: 10, // ceil(40 - 30)
+    });
+  });
+
+  it("returns triggerMonth 0 when even the current month dips below Sum MIN", () => {
+    expect(computeSuggestedOrder([30, 20, 10, 5, 0, 0], 40)).toEqual({
+      triggerMonth: 0,
       orderQty: 10, // ceil(40 - 30)
     });
   });
@@ -99,6 +108,11 @@ describe("computeSuggestedOrder", () => {
 describe("computeMustOrderByDate", () => {
   it("returns null when there is no trigger month", () => {
     expect(computeMustOrderByDate(-1, 30, new Date("2026-01-01"))).toBeNull();
+  });
+
+  it("treats triggerMonth 0 as due immediately, not 'no trigger'", () => {
+    const result = computeMustOrderByDate(0, 30, new Date("2026-01-01"));
+    expect(result?.toISOString().slice(0, 10)).toBe("2026-01-01");
   });
 
   it("subtracts lead time from the days until the trigger month", () => {
