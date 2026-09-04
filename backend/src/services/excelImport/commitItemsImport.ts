@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "../../db";
 import { recordChange } from "../../lib/auditLog";
 import {
@@ -19,8 +20,9 @@ import type { ParsedItemRow } from "./parseItemsRaw";
 // localhost) database: on Render's production Postgres, a 500-row chunk of sequential per-row
 // upserts routinely exceeded Prisma's default 5s interactive-transaction timeout, aborting the
 // whole chunk with a P2028 error — invisible on local dev, where the near-zero-latency localhost
-// connection finishes 500 round-trips well under the limit. 150 plus an explicit longer timeout
-// gives real headroom without losing the point of chunking (short-lived locks).
+// connection finishes 500 round-trips well under the limit. Now that the whole chunk's upsert is
+// ONE bulk statement (see below) instead of one round-trip per row, this size is about parallel
+// lock footprint, not round-trip count — kept the same value since it was never the bottleneck.
 const ITEM_CHUNK_SIZE = 150;
 const CHUNK_TRANSACTION_TIMEOUT_MS = 60_000;
 
@@ -35,6 +37,47 @@ interface PackingRuleLite {
   active: boolean;
 }
 
+interface ItemUpsertRow {
+  itemNoRaw: string;
+  itemNoNormalized: string;
+  description: string;
+  class: string | null;
+  sourceStatus: number | null;
+  category: string | null;
+  dimension: string | null;
+  purchasePrice: number | null;
+  unitCost: number | null;
+  vendor: string | null;
+  poQty: number;
+  stockQty: number;
+  backorderQty: number;
+  leadTimeDays: number | null;
+  avgMonth: number | null;
+  avgMonth6: number;
+  minUsage: number | null;
+  maxUsage: number | null;
+  oldMin: number | null;
+  sumMin: number | null;
+  next0: number;
+  next1: number;
+  next2: number;
+  next3: number;
+  next4: number;
+  next5: number;
+  calcStatus: string;
+  calcTrend: string;
+  recommendedMin: number | null;
+  suggestedOrderQty: number;
+  mustOrderByDate: Date | null;
+  prQtySuggested: number;
+  prQtyCurrent: number | null;
+  prIsOverride: boolean;
+  remark: string | null;
+  forModel: string | null;
+  discontinuedModel: string | null;
+  lastImportedAt: Date;
+}
+
 function computeItemData(
   row: ParsedItemRow,
   ctx: {
@@ -44,7 +87,7 @@ function computeItemData(
     poTotals: Map<string, number>;
     now: Date;
   }
-) {
+): ItemUpsertRow {
   const hist13 = row.usageHistory.map((h) => h.qty);
   // The 6-month trend window (AO-AT in the original) is M-6..M-1 — it excludes the
   // current/incomplete month M-0, same as computeAvgMonth's exclusion below.
@@ -116,6 +159,97 @@ function computeItemData(
 }
 
 /**
+ * One INSERT ... ON CONFLICT DO UPDATE statement for the whole chunk instead of one upsert
+ * round-trip per row — the original per-row loop was fine against localhost Postgres but became
+ * the actual bottleneck once the database moved off-network (Supabase): ~150 sequential
+ * round-trips per chunk at real internet latency (~100-150ms each) made a full 11k-row import
+ * take 15-25 minutes and regularly outlast the platform's HTTP proxy timeout, leaving the UI
+ * stuck on "Importing..." even though the backend eventually finished. This bulk statement does
+ * the same 150 upserts in one round-trip regardless of network latency.
+ */
+async function bulkUpsertItems(
+  tx: Prisma.TransactionClient,
+  rows: ItemUpsertRow[]
+): Promise<{ id: number; itemNoNormalized: string }[]> {
+  if (rows.length === 0) return [];
+
+  const columns = [
+    "itemNoRaw",
+    "itemNoNormalized",
+    "description",
+    "class",
+    "sourceStatus",
+    "category",
+    "dimension",
+    "purchasePrice",
+    "unitCost",
+    "vendor",
+    "poQty",
+    "stockQty",
+    "backorderQty",
+    "leadTimeDays",
+    "avgMonth",
+    "avgMonth6",
+    "minUsage",
+    "maxUsage",
+    "oldMin",
+    "sumMin",
+    "next0",
+    "next1",
+    "next2",
+    "next3",
+    "next4",
+    "next5",
+    "calcStatus",
+    "calcTrend",
+    "recommendedMin",
+    "suggestedOrderQty",
+    "mustOrderByDate",
+    "prQtySuggested",
+    "prQtyCurrent",
+    "prIsOverride",
+    "remark",
+    "forModel",
+    "discontinuedModel",
+    "lastImportedAt",
+    "updatedAt",
+  ] as const;
+
+  const valueTuples = rows.map(
+    (r) => Prisma.sql`(
+      ${r.itemNoRaw}, ${r.itemNoNormalized}, ${r.description}, ${r.class},
+      ${r.sourceStatus}::integer, ${r.category}, ${r.dimension},
+      ${r.purchasePrice}::double precision, ${r.unitCost}::double precision, ${r.vendor},
+      ${r.poQty}::double precision, ${r.stockQty}::double precision, ${r.backorderQty}::double precision,
+      ${r.leadTimeDays}::double precision, ${r.avgMonth}::double precision, ${r.avgMonth6}::double precision,
+      ${r.minUsage}::double precision, ${r.maxUsage}::double precision, ${r.oldMin}::double precision,
+      ${r.sumMin}::double precision, ${r.next0}::double precision, ${r.next1}::double precision,
+      ${r.next2}::double precision, ${r.next3}::double precision, ${r.next4}::double precision,
+      ${r.next5}::double precision, ${r.calcStatus}::"CalcStatus", ${r.calcTrend}::"CalcTrend",
+      ${r.recommendedMin}::double precision, ${r.suggestedOrderQty}::double precision,
+      ${r.mustOrderByDate}::timestamp, ${r.prQtySuggested}::double precision,
+      ${r.prQtyCurrent}::double precision, ${r.prIsOverride}::boolean, ${r.remark}, ${r.forModel},
+      ${r.discontinuedModel}, ${r.lastImportedAt}::timestamp, ${r.lastImportedAt}::timestamp
+    )`
+  );
+
+  const columnListSql = Prisma.raw(columns.map((c) => `"${c}"`).join(", "));
+  const updateSetSql = Prisma.raw(
+    columns
+      .filter((c) => c !== "itemNoNormalized")
+      .map((c) => `"${c}" = EXCLUDED."${c}"`)
+      .join(", ")
+  );
+
+  return tx.$queryRaw<{ id: number; itemNoNormalized: string }[]>`
+    INSERT INTO "items" (${columnListSql})
+    VALUES ${Prisma.join(valueTuples, ", ")}
+    ON CONFLICT ("itemNoNormalized") DO UPDATE SET ${updateSetSql}
+    RETURNING "id", "itemNoNormalized"
+  `;
+}
+
+/**
  * Deliberately NOT one giant transaction wrapping all ~11K rows: that held every touched row's
  * lock for the entire multi-minute import, blocking any concurrent PR-qty edit until the whole
  * thing finished. Each ITEM_CHUNK_SIZE-row slice now commits on its own, so a lock is only ever
@@ -162,7 +296,8 @@ export async function commitItemsImport(params: {
       });
       const existingByNo = new Map(existingItems.map((e) => [e.itemNoNormalized, e]));
 
-      const itemIdByNo = new Map<string, number>();
+      const upsertRows: ItemUpsertRow[] = [];
+      const auditNotes: Array<{ itemNoNormalized: string; oldValue: number | null; newValue: number | null }> = [];
       for (const row of rowChunk) {
         const existingPr = existingByNo.get(row.itemNoNormalized);
         const data = computeItemData(row, {
@@ -172,30 +307,37 @@ export async function commitItemsImport(params: {
           poTotals,
           now,
         });
-        const item = await tx.item.upsert({
-          where: { itemNoNormalized: row.itemNoNormalized },
-          create: data,
-          update: data,
-          select: { id: true },
-        });
-        itemIdByNo.set(row.itemNoNormalized, item.id);
+        upsertRows.push(data);
 
         // A user's manually-overridden PR qty gets re-rounded to the CURRENT packing rule on
         // every reimport (e.g. the multiple-of value changed since they set it) — that silently
         // changes a value they explicitly chose, so it needs the same audit trail as any other
         // PR edit, not just the ones made through the PATCH endpoint.
         if (existingPr?.prIsOverride && existingPr.prQtyCurrent !== data.prQtyCurrent) {
-          await recordChange(tx, {
-            entityType: "Item",
-            entityId: String(item.id),
-            fieldName: "prQtyCurrent",
+          auditNotes.push({
+            itemNoNormalized: row.itemNoNormalized,
             oldValue: existingPr.prQtyCurrent,
             newValue: data.prQtyCurrent,
-            action: "UPDATE",
-            changedById: uploadedById,
-            note: "Re-rounded to packing rule on reimport",
           });
         }
+      }
+
+      const upserted = await bulkUpsertItems(tx, upsertRows);
+      const itemIdByNo = new Map(upserted.map((i) => [i.itemNoNormalized, i.id]));
+
+      for (const note of auditNotes) {
+        const itemId = itemIdByNo.get(note.itemNoNormalized);
+        if (itemId === undefined) continue;
+        await recordChange(tx, {
+          entityType: "Item",
+          entityId: String(itemId),
+          fieldName: "prQtyCurrent",
+          oldValue: note.oldValue,
+          newValue: note.newValue,
+          action: "UPDATE",
+          changedById: uploadedById,
+          note: "Re-rounded to packing rule on reimport",
+        });
       }
 
       const touchedIds = [...itemIdByNo.values()];

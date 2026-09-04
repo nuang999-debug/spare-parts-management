@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "../../db";
 import { recordChange } from "../../lib/auditLog";
 import {
@@ -20,6 +21,66 @@ function chunk<T>(arr: T[], size: number): T[][] {
   const out: T[][] = [];
   for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
   return out;
+}
+
+interface ItemRecompute {
+  id: number;
+  poQty: number;
+  next0: number;
+  next1: number;
+  next2: number;
+  next3: number;
+  next4: number;
+  next5: number;
+  calcStatus: string;
+  suggestedOrderQty: number;
+  mustOrderByDate: Date | null;
+  prQtySuggested: number;
+  prQtyCurrent: number | null;
+}
+
+/**
+ * One UPDATE ... FROM (VALUES ...) statement for the whole chunk instead of one UPDATE round-trip
+ * per item — same fix and same reasoning as commitItemsImport.ts's bulkUpsertItems: against a
+ * real (non-localhost) database, ~150 sequential round-trips per chunk at real internet latency
+ * turned this recompute (which touches EVERY item in the catalog, not just the imported PO lines)
+ * into a 15-25 minute request that regularly outlasted the platform's HTTP proxy timeout.
+ */
+async function bulkUpdateItems(tx: Prisma.TransactionClient, rows: ItemRecompute[]): Promise<void> {
+  if (rows.length === 0) return;
+
+  const valueTuples = rows.map(
+    (r) => Prisma.sql`(
+      ${r.id}::integer, ${r.poQty}::double precision,
+      ${r.next0}::double precision, ${r.next1}::double precision, ${r.next2}::double precision,
+      ${r.next3}::double precision, ${r.next4}::double precision, ${r.next5}::double precision,
+      ${r.calcStatus}::"CalcStatus", ${r.suggestedOrderQty}::double precision,
+      ${r.mustOrderByDate}::timestamp, ${r.prQtySuggested}::double precision,
+      ${r.prQtyCurrent}::double precision
+    )`
+  );
+
+  await tx.$executeRaw`
+    UPDATE "items" AS i SET
+      "poQty" = v."poQty",
+      "next0" = v."next0",
+      "next1" = v."next1",
+      "next2" = v."next2",
+      "next3" = v."next3",
+      "next4" = v."next4",
+      "next5" = v."next5",
+      "calcStatus" = v."calcStatus",
+      "suggestedOrderQty" = v."suggestedOrderQty",
+      "mustOrderByDate" = v."mustOrderByDate",
+      "prQtySuggested" = v."prQtySuggested",
+      "prQtyCurrent" = v."prQtyCurrent",
+      "updatedAt" = now()
+    FROM (VALUES ${Prisma.join(valueTuples, ", ")}) AS v(
+      "id", "poQty", "next0", "next1", "next2", "next3", "next4", "next5",
+      "calcStatus", "suggestedOrderQty", "mustOrderByDate", "prQtySuggested", "prQtyCurrent"
+    )
+    WHERE i."id" = v."id"
+  `;
 }
 
 /**
@@ -134,6 +195,9 @@ export async function commitPurchaseLinesImport(params: {
               prQtyCurrent: true,
             },
           });
+
+          const recomputeRows: ItemRecompute[] = [];
+          const auditNotes: Array<{ itemId: number; oldValue: number | null; newValue: number | null }> = [];
           for (const item of itemChunk) {
             const poQty = poTotalsByNo.get(item.itemNoNormalized) ?? 0;
             const poBuckets = poBucketsByNo.get(item.itemNoNormalized) ?? [0, 0, 0, 0, 0, 0];
@@ -149,38 +213,42 @@ export async function commitPurchaseLinesImport(params: {
             // could leave prQtyCurrent silently violating the currently active rule.
             const prQtyCurrent = item.prIsOverride ? applyPackingRule(item.prQtyCurrent ?? 0, rule) : null;
 
-            await tx.item.update({
-              where: { id: item.id },
-              data: {
-                poQty,
-                next0: next[0],
-                next1: next[1],
-                next2: next[2],
-                next3: next[3],
-                next4: next[4],
-                next5: next[5],
-                calcStatus,
-                suggestedOrderQty: suggestion.orderQty,
-                mustOrderByDate,
-                prQtySuggested,
-                prQtyCurrent,
-              },
+            recomputeRows.push({
+              id: item.id,
+              poQty,
+              next0: next[0],
+              next1: next[1],
+              next2: next[2],
+              next3: next[3],
+              next4: next[4],
+              next5: next[5],
+              calcStatus,
+              suggestedOrderQty: suggestion.orderQty,
+              mustOrderByDate,
+              prQtySuggested,
+              prQtyCurrent,
             });
 
             if (item.prIsOverride && item.prQtyCurrent !== prQtyCurrent) {
-              await recordChange(tx, {
-                entityType: "Item",
-                entityId: String(item.id),
-                fieldName: "prQtyCurrent",
-                oldValue: item.prQtyCurrent,
-                newValue: prQtyCurrent,
-                action: "UPDATE",
-                changedById: uploadedById,
-                note: "Re-rounded to packing rule on Purchase Lines reimport",
-              });
+              auditNotes.push({ itemId: item.id, oldValue: item.prQtyCurrent, newValue: prQtyCurrent });
             }
 
             itemsUpdated++;
+          }
+
+          await bulkUpdateItems(tx, recomputeRows);
+
+          for (const note of auditNotes) {
+            await recordChange(tx, {
+              entityType: "Item",
+              entityId: String(note.itemId),
+              fieldName: "prQtyCurrent",
+              oldValue: note.oldValue,
+              newValue: note.newValue,
+              action: "UPDATE",
+              changedById: uploadedById,
+              note: "Re-rounded to packing rule on Purchase Lines reimport",
+            });
           }
         },
         { timeout: CHUNK_TRANSACTION_TIMEOUT_MS }
