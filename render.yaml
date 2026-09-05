@@ -1,35 +1,5 @@
 services:
   - type: web
-    name: spareparts-backend
-    runtime: node
-    plan: free
-    rootDir: backend
-    # --include=dev is required here: the NODE_ENV=production env var below applies during the
-    # build step too, and npm's default behavior is to skip devDependencies (typescript, every
-    # @types/* package) whenever NODE_ENV=production is set — even though tsc needs them to
-    # compile. Without this flag the build fails with "Cannot find module 'express'" etc.
-    # Seeding after migrate deploy creates the first admin user (username "admin", password
-    # "ChangeMe123!" unless SEED_ADMIN_USERNAME/SEED_ADMIN_PASSWORD env vars override it) and the
-    # 6 packing-unit rules — uses upsert throughout, so safe to run on every deploy, not just the
-    # first one.
-    buildCommand: npm install --include=dev && npx prisma generate && npx prisma migrate deploy && npm run seed && npm run build
-    startCommand: npm start
-    envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: spareparts-db
-          property: connectionString
-      - key: SESSION_SECRET
-        generateValue: true
-      # Comma-separated — both the Cloudflare Pages frontend (faster, closer to Thailand) and the
-      # original Render static site stay allowed during the migration; drop the Render one once
-      # Cloudflare Pages is confirmed working and DNS/bookmarks have moved over.
-      - key: CORS_ORIGIN
-        value: https://spare-parts-management.pages.dev,https://spareparts-frontend.onrender.com
-      - key: NODE_ENV
-        value: production
-
-  - type: web
     name: spareparts-frontend
     runtime: static
     rootDir: frontend
@@ -46,7 +16,3 @@ services:
       - type: rewrite
         source: /*
         destination: /index.html
-
-databases:
-  - name: spareparts-db
-    plan: free
