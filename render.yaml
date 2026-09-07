@@ -1,18 +1,8 @@
-services:
-  - type: web
-    name: spareparts-frontend
-    runtime: static
-    rootDir: frontend
-    buildCommand: npm install && npm run build
-    staticPublishPath: dist
-    envVars:
-      # Render appended a random suffix to the real backend hostname (the bare
-      # "spareparts-backend.onrender.com" was already taken by another account) — confirmed via
-      # the actual provisioned service page. Must match exactly or every API call from the
-      # frontend silently goes nowhere.
-      - key: VITE_API_BASE_URL
-        value: https://spareparts-backend-jqjc.onrender.com
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
+# Nothing left for Render's Blueprint to manage — the frontend now lives on Cloudflare Pages
+# (spare-parts-management.pages.dev) and the backend runs as spareparts-backend-sg in Singapore,
+# created directly via the Render dashboard rather than through this Blueprint (see
+# commit ce91815, "Remove the old Oregon backend and expired Postgres from the Blueprint").
+# The old spareparts-frontend static site (pointing at the now-deleted Oregon backend) is being
+# retired too — keeping its entry here would let the next Blueprint sync recreate it after it's
+# deleted from the Render dashboard.
+services: []
