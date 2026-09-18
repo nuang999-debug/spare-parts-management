@@ -178,6 +178,13 @@ const columns = [
     meta: { filterType: "gte" },
     cell: (info) => info.getValue()?.toFixed(1) ?? "-",
   }),
+  columnHelper.accessor("avgMonth6", {
+    header: "AVG/M6",
+    size: 72,
+    filterFn: gteFilter,
+    meta: { filterType: "gte" },
+    cell: (info) => <span className="avg-month6-cell">{info.getValue()?.toFixed(1) ?? "-"}</span>,
+  }),
   columnHelper.accessor("leadTimeDays", {
     header: "LEAD (AX)",
     size: 69,

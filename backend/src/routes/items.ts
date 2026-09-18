@@ -28,6 +28,7 @@ const LIST_SELECT = {
   backorderQty: true,
   leadTimeDays: true,
   avgMonth: true,
+  avgMonth6: true,
   oldMin: true,
   sumMin: true,
   next0: true,

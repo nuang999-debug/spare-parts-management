@@ -328,7 +328,15 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
                 <span className="kpi-sub">ช่อง Y: {fmtN(item.backorderQty, 0)}</span>
               </div>
               <div className="kpi">
-                <span className="kpi-label">AVG/M (AW)</span>
+                <span className="kpi-label">
+                  AVG/M (AW)
+                  {item.avgMonth6 != null && (
+                    <span style={{ color: "var(--accent2)" }} title="ค่าเฉลี่ย 6 เดือน — ใช้คำนวณ NEXT-0..5">
+                      {" "}
+                      · 6M: {fmt(item.avgMonth6, 1)}
+                    </span>
+                  )}
+                </span>
                 <span className="kpi-value">{fmt(item.avgMonth, 1)}</span>
                 <span className="kpi-sub">Lead Time: {item.leadTimeDays ?? "—"} วัน (AX)</span>
               </div>
