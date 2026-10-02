@@ -86,12 +86,10 @@ const columnHelper = createColumnHelper<ItemListRow>();
  * on table cells entirely, since that combination is unreliable across browsers/rendering engines. */
 const FROZEN_COLUMN_IDS = new Set(["itemNoRaw", "description"]);
 
-const HISTORY_LETTERS = ["AO", "AP", "AQ", "AR", "AS", "AT"];
-
-const historyColumns = HISTORY_LETTERS.map((letter, i) =>
+const historyColumns = Array.from({ length: 6 }, (_, i) =>
   columnHelper.accessor((row) => row.usageHistory[i]?.qty ?? null, {
     id: `hist${i}`,
-    header: `${letter} ${thaiMonthLabel(i - 6)}`,
+    header: thaiMonthLabel(i - 6),
     size: 58,
     filterFn: gteFilter,
     meta: { filterType: "gte" },
@@ -105,10 +103,10 @@ const historyColumns = HISTORY_LETTERS.map((letter, i) =>
   })
 );
 
-const nextColumn = (n: 0 | 1 | 2 | 3 | 4 | 5, letter: string) =>
+const nextColumn = (n: 0 | 1 | 2 | 3 | 4 | 5) =>
   columnHelper.accessor(`next${n}`, {
     id: `next${n}`,
-    header: letter ? `NEXT-${n} (${letter}) ${thaiMonthLabel(n)}` : `NEXT-${n} ${thaiMonthLabel(n)}`,
+    header: `NEXT-${n} ${thaiMonthLabel(n)}`,
     size: 100,
     filterFn: gteFilter,
     meta: { filterType: "gte" },
@@ -172,7 +170,7 @@ const columns = [
     cell: (info) => <TrendIndicator trend={info.getValue()} />,
   }),
   columnHelper.accessor("avgMonth", {
-    header: "AVG/M (AW)",
+    header: "AVG/M",
     size: 78,
     filterFn: gteFilter,
     meta: { filterType: "gte" },
@@ -186,44 +184,44 @@ const columns = [
     cell: (info) => <span className="avg-month6-cell">{info.getValue()?.toFixed(1) ?? "-"}</span>,
   }),
   columnHelper.accessor("leadTimeDays", {
-    header: "LEAD (AX)",
-    size: 69,
+    header: "LEAD TIME",
+    size: 80,
     filterFn: gteFilter,
     meta: { filterType: "gte" },
   }),
   columnHelper.accessor("oldMin", {
-    header: "OLD MIN (BB)",
+    header: "OLD MIN",
     size: 84,
     filterFn: gteFilter,
     meta: { filterType: "gte" },
   }),
   columnHelper.accessor("sumMin", {
-    header: "SUM MIN (BC)",
+    header: "SUM MIN",
     size: 85,
     filterFn: gteFilter,
     meta: { filterType: "gte" },
     cell: (info) => <span className="sum-min-cell">{info.getValue() ?? "-"}</span>,
   }),
   columnHelper.accessor("poQty", {
-    header: "PO N0 (BD=M)",
+    header: "PO N0",
     size: 87,
     filterFn: gteFilter,
     meta: { filterType: "gte" },
   }),
   columnHelper.accessor("stockQty", {
-    header: "STOCK (BE=Q)",
+    header: "STOCK N0",
     size: 88,
     filterFn: gteFilter,
     meta: { filterType: "gte" },
   }),
   columnHelper.accessor("backorderQty", {
-    header: "SO (BF=Y)",
+    header: "SO",
     size: 69,
     filterFn: gteFilter,
     meta: { filterType: "gte" },
   }),
   columnHelper.accessor("prQtyCurrent", {
-    header: "PR QTY (BG)",
+    header: "PR QTY",
     size: 100,
     filterFn: gteFilter,
     meta: { filterType: "gte" },
@@ -238,12 +236,12 @@ const columns = [
       />
     ),
   }),
-  nextColumn(0, ""),
-  nextColumn(1, "BH"),
-  nextColumn(2, "BI"),
-  nextColumn(3, "BJ"),
-  nextColumn(4, "BK"),
-  nextColumn(5, "BL"),
+  nextColumn(0),
+  nextColumn(1),
+  nextColumn(2),
+  nextColumn(3),
+  nextColumn(4),
+  nextColumn(5),
   columnHelper.accessor("calcStatus", {
     header: "สถานะ",
     size: 62,
@@ -657,15 +655,15 @@ export default function ItemsTable({
           {showAll
             ? `แสดง ${rows.length} / ${items?.length ?? 0} รายการ`
             : includesZeroBc
-              ? `แสดง ${rows.length} รายการ (รวม BC=0 เพราะมีการค้นหา/กรอง) จากทั้งหมด ${items?.length ?? 0} รายการ`
-              : `แสดง ${rows.length} รายการ (BC>0) จากทั้งหมด ${items?.length ?? 0} รายการ`}
+              ? `แสดง ${rows.length} รายการ (รวมรายการที่ไม่มี Sum MIN เพราะมีการค้นหา/กรอง) จากทั้งหมด ${items?.length ?? 0} รายการ`
+              : `แสดง ${rows.length} รายการ (มี Sum MIN) จากทั้งหมด ${items?.length ?? 0} รายการ`}
         </span>
         <div className="items-toolbar-actions">
           <button type="button" className={alertOnly ? "on" : ""} onClick={() => setAlertOnly((v) => !v)}>
             🚨 เฉพาะต้องสั่ง
           </button>
           <button type="button" onClick={() => setShowAll((v) => !v)}>
-            {showAll ? `ซ่อนแถว BC=0 (${zeroSumMinCount} รายการ)` : "แสดงทั้งหมด รวม BC=0"}
+            {showAll ? `ซ่อนรายการที่ไม่มี Sum MIN (${zeroSumMinCount} รายการ)` : "แสดงทั้งหมด รวมรายการที่ไม่มี Sum MIN"}
           </button>
           <button
             type="button"

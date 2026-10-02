@@ -37,9 +37,6 @@ const TOOLTIP_STYLE = {
 const TOOLTIP_ITEM_STYLE = { color: TOOLTIP_STYLE.color };
 const TOOLTIP_LABEL_STYLE = { color: TOOLTIP_STYLE.color };
 const AXIS_TICK = { fontSize: 11, fill: CHART_MUTED };
-// Index 0 (NEXT-0, "this month") has no letter of its own — a new concept the original
-// spreadsheet never had a column for. Index 1-5 keep the original BH-BL letters.
-const NEXT_LETTERS = ["", "BH", "BI", "BJ", "BK", "BL"];
 
 /** Unstyled <b> defaults to accent2 — mirrors the original's `.da-text b { color: var(--acc2) }`. */
 function RichRuns({ runs }: { runs: Run[] }) {
@@ -221,7 +218,7 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
           qty: h.qty,
         }));
         const forecastChartData = a.next.map((v, i) => ({
-          label: `${NEXT_LETTERS[i]} ${thaiMonthLabel(i)}`.trim(),
+          label: thaiMonthLabel(i),
           value: v,
         }));
 
@@ -232,38 +229,38 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
         const hasPoDueDates = item.poDueDates.length > 0;
 
         const fields: Array<[string, string]> = [
-          ["No. (A)", item.itemNoRaw],
-          ["Description (B)", item.description ?? "-"],
-          ["Class (F)", item.class ?? "-"],
-          ["Category (G)", item.category ?? "-"],
-          ["Dimension (H)", item.dimension ?? "-"],
-          ["Vendor (K)", item.vendor ?? "-"],
-          ["Pur. Price (I)", `฿${fmt(item.purchasePrice, 2)}`],
-          ["Unit Cost (J)", item.unitCost != null ? `฿${fmt(item.unitCost, 2)}` : "-"],
-          ["PO N0 / M", fmtN(item.poQty, 0)],
-          ["ST N0 / Q", fmtN(item.stockQty, 0)],
-          ["BO QTY / Y", fmtN(item.backorderQty, 0)],
+          ["No.", item.itemNoRaw],
+          ["Description", item.description ?? "-"],
+          ["Class", item.class ?? "-"],
+          ["Category", item.category ?? "-"],
+          ["Dimension", item.dimension ?? "-"],
+          ["Vendor", item.vendor ?? "-"],
+          ["Pur. Price", `฿${fmt(item.purchasePrice, 2)}`],
+          ["Unit Cost", item.unitCost != null ? `฿${fmt(item.unitCost, 2)}` : "-"],
+          ["PO N0", fmtN(item.poQty, 0)],
+          ["Stock N0", fmtN(item.stockQty, 0)],
+          ["BO QTY", fmtN(item.backorderQty, 0)],
           ...item.yearlySales.map((y): [string, string] => [`${y.year}`, fmt(y.qty, 0)]),
           ...item.usageHistory.map((h): [string, string] => [
             `M-${12 - h.monthIndex} ${thaiMonthLabel(h.monthIndex - 12)}`,
             fmtN(h.qty, 0),
           ]),
-          ["รวม 12M (AV)", fmt(item.usageHistory.slice(0, 12).reduce((s, h) => s + h.qty, 0), 0)],
-          ["AVG/M (AW)", fmt(item.avgMonth, 1)],
-          ["Lead Time (AX)", `${item.leadTimeDays ?? "—"} วัน`],
-          ["Min usage (AY)", fmt(item.minUsage, 0)],
-          ["Max usage (AZ)", fmt(item.maxUsage, 0)],
-          ["New MIN.ST (BA)", fmt(item.recommendedMin, 1)],
-          ["Old MIN (BB)", fmt(item.oldMin, 0)],
-          ["Sum MIN ✦ (BC)", fmt(item.sumMin, 0)],
+          ["รวม 12 เดือน", fmt(item.usageHistory.slice(0, 12).reduce((s, h) => s + h.qty, 0), 0)],
+          ["AVG/M", fmt(item.avgMonth, 1)],
+          ["Lead Time", `${item.leadTimeDays ?? "—"} วัน`],
+          ["Min usage", fmt(item.minUsage, 0)],
+          ["Max usage", fmt(item.maxUsage, 0)],
+          ["New MIN.ST", fmt(item.recommendedMin, 1)],
+          ["Old MIN", fmt(item.oldMin, 0)],
+          ["Sum MIN ✦", fmt(item.sumMin, 0)],
           ["PR qty suggested (calc.)", fmt(item.prQtySuggested, 0)],
-          ["PR qty current (BG)", fmt(item.prQtyCurrent, 0)],
+          ["PR qty current", fmt(item.prQtyCurrent, 0)],
           ...([0, 1, 2, 3, 4, 5] as const).map((n): [string, string] => [
-            NEXT_LETTERS[n] ? `Next-${n} (${NEXT_LETTERS[n]}) ${thaiMonthLabel(n)}` : `Next-${n} ${thaiMonthLabel(n)}`,
+            `Next-${n} ${thaiMonthLabel(n)}`,
             fmtN(a.next[n], 1),
           ]),
-          ["Remark (BM)", item.remark ?? "-"],
-          ["For Model (BN)", item.forModel ?? "-"],
+          ["Remark", item.remark ?? "-"],
+          ["For Model", item.forModel ?? "-"],
         ];
 
         return (
@@ -307,29 +304,29 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
 
             <div className="detail-kpis">
               <div className="kpi">
-                <span className="kpi-label">PO N0 (BD=M)</span>
+                <span className="kpi-label">PO N0</span>
                 <span className="kpi-value" style={{ color: "var(--accent2)" }}>{fmtN(item.poQty, 0)}</span>
                 {hasPoDueDates ? (
                   <PoDueDatesList key={item.id} rows={item.poDueDates} />
                 ) : (
-                  <span className="kpi-sub">ช่อง M: {fmtN(item.poQty, 0)}</span>
+                  <span className="kpi-sub">PO ค้างรับ</span>
                 )}
               </div>
               <div className="kpi">
-                <span className="kpi-label">Stock N0 (BE=Q)</span>
+                <span className="kpi-label">Stock N0</span>
                 <span className="kpi-value" style={{ color: "var(--accent)" }}>{fmtN(item.stockQty, 0)}</span>
-                <span className="kpi-sub">ช่อง Q: {fmtN(item.stockQty, 0)}</span>
+                <span className="kpi-sub">สต็อกที่สาขาใหญ่</span>
               </div>
               <div className="kpi">
-                <span className="kpi-label">Sale Order (BF=Y)</span>
+                <span className="kpi-label">Sale Order</span>
                 <span className="kpi-value" style={{ color: "var(--warning)" }}>
                   {fmtN(item.backorderQty, 0)}
                 </span>
-                <span className="kpi-sub">ช่อง Y: {fmtN(item.backorderQty, 0)}</span>
+                <span className="kpi-sub">ยอดจองค้างส่ง</span>
               </div>
               <div className="kpi">
                 <span className="kpi-label">
-                  AVG/M (AW)
+                  AVG/M
                   {item.avgMonth6 != null && (
                     <span style={{ color: "var(--accent2)" }} title="ค่าเฉลี่ย 6 เดือน — ใช้คำนวณ NEXT-0..5">
                       {" "}
@@ -338,12 +335,12 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
                   )}
                 </span>
                 <span className="kpi-value">{fmt(item.avgMonth, 1)}</span>
-                <span className="kpi-sub">Lead Time: {item.leadTimeDays ?? "—"} วัน (AX)</span>
+                <span className="kpi-sub">Lead Time: {item.leadTimeDays ?? "—"} วัน</span>
               </div>
               <div className="kpi">
-                <span className="kpi-label">Sum MIN ✦ (BC)</span>
+                <span className="kpi-label">Sum MIN ✦</span>
                 <span className="kpi-value" style={{ color: "var(--accent)" }}>{fmt(item.sumMin, 0)}</span>
-                <span className="kpi-sub">Old MIN (BB): {fmt(item.oldMin, 0)}</span>
+                <span className="kpi-sub">Old MIN: {fmt(item.oldMin, 0)}</span>
               </div>
               <div className="kpi">
                 <span className="kpi-label">สถานะ</span>
@@ -356,13 +353,13 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
                 >
                   {STATUS_DASHBOARD[item.calcStatus ?? "OK"]?.label ?? "-"}
                 </span>
-                <span className="kpi-sub">PR (BG): {item.prQtyCurrent ? fmt(item.prQtyCurrent, 0) : "—"}</span>
+                <span className="kpi-sub">PR: {item.prQtyCurrent ? fmt(item.prQtyCurrent, 0) : "—"}</span>
               </div>
             </div>
 
             <div className="detail-charts-grid">
               <section className="detail-chart-card">
-                <h3>ยอดขาย 13 เดือน (AI-AU)</h3>
+                <h3>ยอดขาย 13 เดือน</h3>
                 <ResponsiveContainer width="100%" height={160}>
                   <AreaChart data={usageChartData}>
                     <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} />
@@ -391,7 +388,7 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
               </section>
 
               <section className="detail-chart-card">
-                <h3>พยากรณ์ BH-BL vs SUM MIN (BC)</h3>
+                <h3>พยากรณ์ NEXT-0..5 vs SUM MIN</h3>
                 <ResponsiveContainer width="100%" height={160}>
                   <BarChart data={forecastChartData}>
                     <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} />
@@ -416,7 +413,7 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
               </section>
 
               <section className="detail-chart-card">
-                <h3>ยอดขายรายปี (AC-AH)</h3>
+                <h3>ยอดขายรายปี</h3>
                 <ResponsiveContainer width="100%" height={140}>
                   <BarChart data={item.yearlySales.map((y) => ({ year: y.year, qty: y.qty }))}>
                     <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} />
@@ -429,7 +426,7 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
               </section>
 
               <section className="detail-chart-card">
-                <h3>NEXT-0→5 vs SUM MIN (BC)</h3>
+                <h3>NEXT-0→5 vs SUM MIN</h3>
                 <div className="whatif-pr-row">
                   <label htmlFor="whatif-pr-input">PR qty (ทดลอง)</label>
                   <input
@@ -452,7 +449,7 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
                 </p>
                 <div className="next-bar-list">
                   <div className="next-bar-header">
-                    <span>เดือน / ช่อง</span>
+                    <span>เดือน</span>
                     <span>Stock คาด</span>
                   </div>
                   {a.next.map((val, i) => {
@@ -461,7 +458,7 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
                     return (
                       <div className="next-bar-row" key={i}>
                         <span className="next-bar-label">
-                          {NEXT_LETTERS[i]} {thaiMonthLabel(i)}
+                          {thaiMonthLabel(i)}
                         </span>
                         <div className="next-bar-track">
                           <div className={`next-bar-fill tone-${tone}`} style={{ width: `${widthPct}%` }} />
@@ -477,7 +474,7 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
                   })}
                 </div>
                 <p className="next-bar-footer">
-                  Sum MIN (BC): {fmt(item.sumMin, 0)} · Old MIN (BB): {fmt(item.oldMin, 0)} · New MIN (BA):{" "}
+                  Sum MIN: {fmt(item.sumMin, 0)} · Old MIN: {fmt(item.oldMin, 0)} · New MIN:{" "}
                   {fmt(item.recommendedMin, 1)}
                 </p>
               </section>
@@ -516,7 +513,6 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
                       <span className="kpi-label">เดือนที่ Stock ต่ำกว่า MIN</span>
                       <span className="kpi-value tone-danger">
                         {a.triggerMonthLabel}
-                        {a.triggerLetter ? ` (${a.triggerLetter})` : ""}
                       </span>
                       <span className="kpi-sub">
                         {fmtN(a.triggerValue, 1)} &lt; {fmt(item.sumMin, 0)}

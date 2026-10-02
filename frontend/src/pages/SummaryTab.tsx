@@ -59,8 +59,8 @@ function ChangeRowLine({ row, isUp, onGoToItem }: { row: ChangeRow; isUp: boolea
       </div>
       <div style={{ textAlign: "right", marginLeft: "0.5rem", flexShrink: 0 }}>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.72rem" }}>
-          {row.oldMin > 0 ? `BB:${fmt(row.oldMin)} → ` : "NEW → "}
-          <b style={{ color }}>BC:{fmt(row.sumMin)}</b>
+          {row.oldMin > 0 ? `Old MIN ${fmt(row.oldMin)} → ` : "NEW → "}
+          <b style={{ color }}>Sum MIN {fmt(row.sumMin)}</b>
         </div>
         {row.oldMin > 0 && (
           <div style={{ fontSize: "0.65rem", fontFamily: "var(--font-mono)", color }}>
@@ -191,10 +191,10 @@ export default function SummaryTab({ onGoToItem }: { onGoToItem: (itemNoRaw: str
           <div className="sum-kv" style={{ color: "var(--accent)" }}>
             {fmt(totalItems)}
           </div>
-          <div className="sum-ks">รายการที่ BC&gt;0</div>
+          <div className="sum-ks">รายการที่มี Sum MIN</div>
         </div>
         <div className="sum-kc">
-          <div className="sum-kl">Stock N0 รวม (BE)</div>
+          <div className="sum-kl">Stock N0 รวม</div>
           <div className="sum-kv" style={{ color: "var(--accent2)" }}>
             {fmt(totalStock)} ชิ้น
           </div>
@@ -330,7 +330,7 @@ export default function SummaryTab({ onGoToItem }: { onGoToItem: (itemNoRaw: str
 
       <div className="sum-two">
         <div className="sum-sec">
-          <div className="sum-sec-hd">📦 สัดส่วนแนวโน้มการใช้ (AO-AT 6 เดือน)</div>
+          <div className="sum-sec-hd">📦 สัดส่วนแนวโน้มการใช้ (6 เดือน)</div>
           <div className="sum-sec-bd">
             {trendTotal === 0 ? (
               <p>ไม่มีข้อมูล</p>
@@ -416,10 +416,10 @@ export default function SummaryTab({ onGoToItem }: { onGoToItem: (itemNoRaw: str
 
       <div className="sum-three">
         <div className="sum-sec">
-          <div className="sum-sec-hd">แนวโน้ม Inventory (AO-AT + Next-0..5)</div>
+          <div className="sum-sec-hd">แนวโน้ม Inventory (6 เดือนย้อนหลัง + Next-0..5)</div>
           <div className="sum-sec-bd">
             <div style={{ fontSize: "0.65rem", color: "var(--text-muted)", marginBottom: "0.3rem" }}>
-              แนวโน้ม 6 เดือน (AO-AT)
+              แนวโน้ม 6 เดือน
             </div>
             <div className="sum-three" style={{ marginBottom: "0.75rem" }}>
               <div className="mini-kc">
@@ -456,11 +456,11 @@ export default function SummaryTab({ onGoToItem }: { onGoToItem: (itemNoRaw: str
               </span>
             </p>
             <div className="fcrow">
-              <span className="fcl">Stock N0 รวมปัจจุบัน (BE)</span>
+              <span className="fcl">Stock N0 รวมปัจจุบัน</span>
               <span className="fcv">{fmt(totalStock)}</span>
             </div>
             <div className="fcrow">
-              <span className="fcl">คาด Next-1 รวม (BH)</span>
+              <span className="fcl">คาด Next-1 รวม</span>
               <span className="fcv" style={{ color: totalInvNext > totalStock ? GREEN : RED }}>
                 {fmt(totalInvNext)}
               </span>
@@ -541,7 +541,7 @@ export default function SummaryTab({ onGoToItem }: { onGoToItem: (itemNoRaw: str
         <div className="sum-sec">
           <div className="sum-sec-hd">
             <span>
-              📈 SUM MIN เพิ่มขึ้น (BC &gt; BB) — {fmt(increased.length)} รายการ (ใหม่ {fmt(newItems.length)})
+              📈 SUM MIN เพิ่มขึ้น (Sum MIN &gt; Old MIN) —{fmt(increased.length)} รายการ (ใหม่ {fmt(newItems.length)})
             </span>
             <button
               type="button"
@@ -554,7 +554,7 @@ export default function SummaryTab({ onGoToItem }: { onGoToItem: (itemNoRaw: str
           <div className="sum-sec-bd item-list" style={{ maxHeight: 280 }}>
             {newItems.length > 0 && (
               <div style={{ fontSize: "0.65rem", color: "var(--accent)", marginBottom: "0.3rem", fontWeight: 700 }}>
-                NEW (BB=0→BC&gt;0): {fmt(newItems.length)} รายการ
+                NEW (Old MIN = 0 → มี Sum MIN):{fmt(newItems.length)} รายการ
               </div>
             )}
             {increasedWithNew.slice(0, 120).map((d, i) => (
@@ -569,7 +569,7 @@ export default function SummaryTab({ onGoToItem }: { onGoToItem: (itemNoRaw: str
         </div>
         <div className="sum-sec">
           <div className="sum-sec-hd">
-            <span>📉 SUM MIN ลดลง (BC &lt; BB) — {fmt(decreased.length)} รายการ</span>
+            <span>📉 SUM MIN ลดลง (Sum MIN &lt; Old MIN) —{fmt(decreased.length)} รายการ</span>
             <button type="button" className="sum-export-btn" onClick={() => exportSumMinSheet("dn", decreased)}>
               ⬇ Excel
             </button>

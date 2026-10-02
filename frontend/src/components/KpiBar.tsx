@@ -17,21 +17,21 @@ export default function KpiBar({ items }: { items: ItemListRow[] }) {
         </div>
       </div>
       <div className="kc">
-        <div className="klbl">🔴 Next-0 &lt; Sum MIN(BC)</div>
+        <div className="klbl">🔴 Next-0 &lt; Sum MIN</div>
         <div className="kval" style={{ color: "var(--danger)" }}>
           {danger.toLocaleString()}
         </div>
         <div className="ksub">ต้องสั่งทันที</div>
       </div>
       <div className="kc">
-        <div className="klbl">🟡 Next-1 &lt; Sum MIN(BC)</div>
+        <div className="klbl">🟡 Next-1 &lt; Sum MIN</div>
         <div className="kval" style={{ color: "var(--warning)" }}>
           {warn.toLocaleString()}
         </div>
         <div className="ksub">วางแผนสั่ง</div>
       </div>
       <div className="kc">
-        <div className="klbl">มี PR qty (BG)</div>
+        <div className="klbl">มี PR qty</div>
         <div className="kval" style={{ color: "var(--accent2)" }}>
           {withPr.toLocaleString()}
         </div>

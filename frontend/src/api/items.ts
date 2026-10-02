@@ -32,7 +32,7 @@ export interface ItemListRow {
   leadTimeDays: number | null;
   avgMonth: number | null;
   /** 6-month average (M-6..M-1) — what the NEXT-0..5 forecast formula actually uses,
-   *  distinct from avgMonth (12-month) shown as "AVG/M (AW)". */
+   *  distinct from avgMonth (12-month) shown as "AVG/M". */
   avgMonth6: number | null;
   oldMin: number | null;
   sumMin: number | null;

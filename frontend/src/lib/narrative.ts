@@ -115,7 +115,7 @@ export function buildNarrative(item: ItemDetail, a: ItemAnalysis): NarrativeSect
   const section2: NarrativeBlock[] = [];
   let riskRuns: Run[];
   if (sumMin <= 0) {
-    riskRuns = [t("ยังไม่ได้กำหนด Sum MIN (BC) สำหรับรายการนี้ จึงไม่สามารถประเมินความเสี่ยงเทียบกับเกณฑ์ขั้นต่ำได้")];
+    riskRuns = [t("ยังไม่ได้กำหนด Sum MIN สำหรับรายการนี้ จึงไม่สามารถประเมินความเสี่ยงเทียบกับเกณฑ์ขั้นต่ำได้")];
   } else if (belowCount === 0) {
     riskRuns = [
       b("ความเสี่ยงต่ำ", "var(--success)"),
@@ -413,17 +413,16 @@ export function buildNarrative(item: ItemDetail, a: ItemAnalysis): NarrativeSect
 export function buildPlanReasons(item: ItemDetail, a: ItemAnalysis): Run[][] {
   const sumMin = item.sumMin ?? 0;
   if (a.triggerMonth < 0) {
-    return [[t(`Stock คาดการณ์ทั้งเดือนนี้และ 5 เดือนข้างหน้า ยังสูงกว่า Sum MIN (BC) = ${fmt(sumMin, 0)} ทุกเดือน`)]];
+    return [[t(`Stock คาดการณ์ทั้งเดือนนี้และ 5 เดือนข้างหน้า ยังสูงกว่า Sum MIN = ${fmt(sumMin, 0)} ทุกเดือน`)]];
   }
 
-  const triggerMonthWithLetter = a.triggerLetter ? `${a.triggerMonthLabel} (${a.triggerLetter})` : a.triggerMonthLabel;
   const reasons: Run[][] = [
     [
       t("Stock คาดการณ์เดือน "),
-      b(triggerMonthWithLetter),
+      b(a.triggerMonthLabel),
       t(" = "),
       b(fmtN(a.triggerValue, 1), "var(--danger)"),
-      t(" ต่ำกว่า Sum MIN (BC) = "),
+      t(" ต่ำกว่า Sum MIN = "),
       b(fmt(sumMin, 0)),
     ],
   ];
@@ -441,7 +440,7 @@ export function buildPlanReasons(item: ItemDetail, a: ItemAnalysis): Run[][] {
     ]);
   }
 
-  reasons.push([t("AVG/M (AW) = "), b(fmt(item.avgMonth, 1)), t(" → สั่งเพิ่มให้ Stock ครบ Sum MIN = "), b(fmt(sumMin, 0))]);
+  reasons.push([t("AVG/M = "), b(fmt(item.avgMonth, 1)), t(" → สั่งเพิ่มให้ Stock ครบ Sum MIN = "), b(fmt(sumMin, 0))]);
 
   if (item.poQty > 0) {
     reasons.push([t("มี PO รอรับ "), b(fmt(item.poQty, 0)), t(" ชิ้น (รวมอยู่ใน Next แล้ว)")]);
@@ -472,33 +471,33 @@ export function buildSuggestions(item: ItemDetail, a: ItemAnalysis): Suggestion[
   if (item.calcStatus === "DANGER") {
     suggestions.push({
       icon: "🚨",
-      text: `วิกฤต — Next-0 (${fmtN(a.next[0], 1)}) ต่ำกว่า Sum MIN/BC (${fmt(item.sumMin, 0)})`,
+      text: `วิกฤต — Next-0 (${fmtN(a.next[0], 1)}) ต่ำกว่า Sum MIN (${fmt(item.sumMin, 0)})`,
     });
   } else if (item.calcStatus === "WARN") {
     suggestions.push({
       icon: "⚠️",
-      text: `Next-1/BH (${fmtN(a.next[1], 1)}) ใกล้ Sum MIN/BC (${fmt(item.sumMin, 0)})`,
+      text: `Next-1 (${fmtN(a.next[1], 1)}) ใกล้ Sum MIN (${fmt(item.sumMin, 0)})`,
     });
   } else {
     suggestions.push({ icon: "✅", text: "Stock อยู่ในระดับปกติ" });
   }
   if (a.trendPct > 8) {
-    suggestions.push({ icon: "📈", text: `เทรนด์ขาขึ้น +${fmt(a.trendPct, 1)}% (AO-AT 6M)` });
+    suggestions.push({ icon: "📈", text: `เทรนด์ขาขึ้น +${fmt(a.trendPct, 1)}% (6 เดือน)` });
   }
   if (a.trendPct < -8) {
-    suggestions.push({ icon: "📉", text: `เทรนด์ขาลง ${fmt(a.trendPct, 1)}% (AO-AT 6M)` });
+    suggestions.push({ icon: "📉", text: `เทรนด์ขาลง ${fmt(a.trendPct, 1)}% (6 เดือน)` });
   }
   if (item.backorderQty > item.stockQty) {
-    suggestions.push({ icon: "🚚", text: `SO/BF (${fmt(item.backorderQty, 0)}) > Stock/BE (${fmt(item.stockQty, 0)})` });
+    suggestions.push({ icon: "🚚", text: `SO (${fmt(item.backorderQty, 0)}) > Stock (${fmt(item.stockQty, 0)})` });
   }
   if (item.poQty > 0) {
-    suggestions.push({ icon: "📦", text: `PO รอรับ ${fmt(item.poQty, 0)} ชิ้น (BD=M)` });
+    suggestions.push({ icon: "📦", text: `PO รอรับ ${fmt(item.poQty, 0)} ชิ้น` });
   }
   if ((item.prQtyCurrent ?? 0) > 0) {
-    suggestions.push({ icon: "📋", text: `PR qty (BG) = ${fmt(item.prQtyCurrent, 0)}` });
+    suggestions.push({ icon: "📋", text: `PR qty = ${fmt(item.prQtyCurrent, 0)}` });
   }
   if ((item.leadTimeDays ?? 0) > 0) {
-    suggestions.push({ icon: "⏳", text: `Lead Time ${fmt(item.leadTimeDays, 0)} วัน (AX)` });
+    suggestions.push({ icon: "⏳", text: `Lead Time ${fmt(item.leadTimeDays, 0)} วัน` });
   }
   if (item.remark) {
     suggestions.push({ icon: "📝", text: item.remark });

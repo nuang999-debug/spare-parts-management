@@ -128,7 +128,6 @@ export interface ItemAnalysis {
   urgency: { label: string; tone: Urgency };
   triggerValue: number | null;
   triggerMonthLabel: string;
-  triggerLetter: string;
   trendPct: number;
   volatilityPct: number;
   nonZeroMonths: number;
@@ -139,10 +138,6 @@ export interface ItemAnalysis {
   /** How many of Next-0..5 fall below Sum MIN (0-6) — drives the 4-tier risk assessment. */
   belowMinCount: number;
 }
-
-// Index 0 (NEXT-0, "this month") has no letter of its own — it's a new concept the original
-// spreadsheet never had a column for. Index 1-5 keep the original BH-BL letters.
-const NEXT_LETTERS = ["", "BH", "BI", "BJ", "BK", "BL"];
 
 export function analyzeItem(item: ItemDetail): ItemAnalysis {
   const hist13 = item.usageHistory.map((h) => h.qty);
@@ -166,7 +161,6 @@ export function analyzeItem(item: ItemDetail): ItemAnalysis {
     urgency: urgencyLabel(triggerMonth),
     triggerValue,
     triggerMonthLabel: triggerMonth >= 0 ? thaiMonthLabel(triggerMonth) : "-",
-    triggerLetter: triggerMonth >= 0 ? NEXT_LETTERS[triggerMonth] : "-",
     trendPct: trendPercent(hist6),
     volatilityPct: volatilityPercent(hist6, item.avgMonth ?? 0),
     nonZeroMonths: hist6.filter((v) => v > 0).length,
