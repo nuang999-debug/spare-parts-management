@@ -26,6 +26,10 @@ export interface ItemListRow {
   /** e.g. "ยกเลิกขายCA330" — set when the model this part belongs to has been discontinued from
    *  sale. Null when not applicable. */
   discontinuedModel: string | null;
+  /** Free-text note from the source file: what the part is, or "REP BY <part no>" when replaced. */
+  description2: string | null;
+  /** "Obsolete_<months>" when the part is under provision, otherwise null. */
+  provisionStatus: string | null;
   stockQty: number;
   poQty: number;
   backorderQty: number;

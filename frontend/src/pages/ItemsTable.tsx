@@ -23,6 +23,7 @@ import PrQtyCell from "../components/PrQtyCell";
 import KpiBar from "../components/KpiBar";
 import { thaiMonthLabel } from "../lib/thaiMonths";
 import { nextCellTone } from "../lib/analysis";
+import { provisionLongLabel, provisionMonths, provisionShortLabel, provisionTone } from "../lib/provision";
 import { exportCSV } from "../lib/exportCsv";
 import { useAuth } from "../auth/AuthContext";
 
@@ -31,6 +32,10 @@ declare module "@tanstack/react-table" {
   interface ColumnMeta<TData, TValue> {
     filterType?: "text" | "select" | "gte";
     selectOptions?: string[];
+    /** Display text for a select option whose stored value isn't suitable to show as-is. */
+    selectLabel?: (value: string) => string;
+    /** Tooltip on a text filter input, for a search that matches more than the column itself. */
+    filterTitle?: string;
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface TableMeta<TData> {
@@ -77,6 +82,23 @@ const gteFilter: FilterFn<ItemListRow> = (row, columnId, filterValue) => {
   if (filterValue === "" || filterValue === undefined || filterValue === null) return true;
   const value = row.getValue(columnId);
   return typeof value === "number" && value >= Number(filterValue);
+};
+
+/** The name column's search also looks in Description 2 (model notes like "GU355", "REP BY …"). */
+const descriptionSearchFilter: FilterFn<ItemListRow> = (row, _columnId, filterValue) => {
+  const q = String(filterValue ?? "").trim().toLowerCase();
+  if (!q) return true;
+  const { description, description2 } = row.original;
+  return (description ?? "").toLowerCase().includes(q) || (description2 ?? "").toLowerCase().includes(q);
+};
+
+const PROVISION_ANY = "ANY";
+
+/** "ANY" keeps every part under provision, whatever the number of months. */
+const provisionFilter: FilterFn<ItemListRow> = (row, columnId, filterValue) => {
+  if (filterValue === "" || filterValue === undefined || filterValue === null) return true;
+  const value = row.getValue<string | null>(columnId);
+  return filterValue === PROVISION_ANY ? !!value : value === filterValue;
 };
 
 const columnHelper = createColumnHelper<ItemListRow>();
@@ -145,8 +167,8 @@ const columns = [
   columnHelper.accessor("description", {
     header: "ชื่ออะไหล่",
     size: 220,
-    filterFn: "includesString",
-    meta: { filterType: "text" },
+    filterFn: descriptionSearchFilter,
+    meta: { filterType: "text", filterTitle: "ค้นหาจากชื่อ และ Description 2" },
   }),
   columnHelper.accessor("class", {
     header: "CLASS",
@@ -214,6 +236,28 @@ const columns = [
     filterFn: gteFilter,
     meta: { filterType: "gte" },
   }),
+  columnHelper.accessor("provisionStatus", {
+    header: "PROVISION",
+    size: 92,
+    filterFn: provisionFilter,
+    meta: {
+      filterType: "select",
+      selectOptions: [PROVISION_ANY, "Obsolete_12", "Obsolete_18", "Obsolete_24"],
+      selectLabel: (v) => {
+        const months = provisionMonths(v);
+        return months === null ? "ทุกระดับ" : provisionShortLabel(months);
+      },
+    },
+    cell: (info) => {
+      const months = provisionMonths(info.getValue());
+      if (months === null) return null;
+      return (
+        <span className={`prov-badge tone-${provisionTone(months)}`} title={provisionLongLabel(months)}>
+          {provisionShortLabel(months)}
+        </span>
+      );
+    },
+  }),
   columnHelper.accessor("backorderQty", {
     header: "SO",
     size: 69,
@@ -260,6 +304,7 @@ function FilterCell({ column, items }: { column: Column<ItemListRow, unknown>; i
       <input
         type="text"
         placeholder="🔍"
+        title={meta.filterTitle}
         value={filterValue}
         onChange={(e) => column.setFilterValue(e.target.value || undefined)}
       />
@@ -275,7 +320,7 @@ function FilterCell({ column, items }: { column: Column<ItemListRow, unknown>; i
         <option value="">ทั้ง</option>
         {options.map((opt) => (
           <option key={opt} value={opt}>
-            {opt}
+            {meta.selectLabel ? meta.selectLabel(opt) : opt}
           </option>
         ))}
       </select>
@@ -358,8 +403,10 @@ export default function ItemsTable({
   // otherwise a real item can look "not found" purely because of this filter. A facet filter
   // like CAT/CLASS must NOT bypass the hide — this page is order planning for items that have a
   // Sum MIN, so picking e.g. CAT=MACHINE should never flood the view with hundreds of BC=0 rows
-  // that were never here to plan orders for in the first place.
-  const TEXT_SEARCH_COLUMN_IDS = new Set(["itemNoRaw", "description"]);
+  // that were never here to plan orders for in the first place. PROVISION is the one facet that
+  // does bypass it: parts under provision never have a Sum MIN, so with the hide still on, picking
+  // a provision tier would always show an empty table.
+  const TEXT_SEARCH_COLUMN_IDS = new Set(["itemNoRaw", "description", "provisionStatus"]);
   const hasActiveFilter = columnFilters.some((f) => {
     if (!TEXT_SEARCH_COLUMN_IDS.has(f.id)) return false;
     const v = f.value;

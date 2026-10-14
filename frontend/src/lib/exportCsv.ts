@@ -42,6 +42,8 @@ const HEADER = [
   "ForModel(BN)",
   "Remark(BM)",
   "DiscontinuedModel",
+  "Description 2",
+  "Provision Status",
 ];
 
 function csvCell(v: string | number | null | undefined): string {
@@ -90,6 +92,8 @@ export function exportCSV(rows: ItemListRow[]) {
         d.forModel ?? "",
         d.remark ?? "",
         d.discontinuedModel ?? "",
+        d.description2 ?? "",
+        d.provisionStatus ?? "",
       ]
         .map(csvCell)
         .join(",")

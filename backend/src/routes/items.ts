@@ -23,6 +23,8 @@ const LIST_SELECT = {
   remark: true,
   forModel: true,
   discontinuedModel: true,
+  description2: true,
+  provisionStatus: true,
   stockQty: true,
   poQty: true,
   backorderQty: true,

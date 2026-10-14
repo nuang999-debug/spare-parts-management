@@ -2,6 +2,7 @@ import type { ItemDetail } from "../api/items";
 import type { ItemAnalysis } from "./analysis";
 import { safetyFactorFor } from "./analysis";
 import { thaiDateShort } from "./thaiMonths";
+import { provisionLongLabel, provisionMonths, splitReplacement } from "./provision";
 
 /** A styled text fragment — mirrors the original's embedded <b style="color:..."> spans. */
 export interface Run {
@@ -467,6 +468,24 @@ export function buildSuggestions(item: ItemDetail, a: ItemAnalysis): Suggestion[
       icon: "🛑",
       text: `Model ยกเลิกขาย: ${item.discontinuedModel} — ระวังก่อนสั่งซื้อเพิ่ม เนื่องจากรุ่นที่ใช้อะไหล่นี้เลิกขายแล้ว`,
     });
+  }
+  // Warnings only — a replaced part or one under provision still gets its normal status and
+  // suggested quantity; this just tells the reader to double-check before ordering more of it.
+  if (item.calcStatus === "DANGER" || item.calcStatus === "WARN") {
+    const replacement = splitReplacement(item.description2);
+    if (replacement) {
+      suggestions.push({
+        icon: "🔁",
+        text: `ถูกทดแทนด้วย ${replacement.code} แต่รายการนี้เข้าเกณฑ์สั่งซื้อ ควรตรวจสอบก่อนสั่งเพิ่ม`,
+      });
+    }
+    const provision = provisionMonths(item.provisionStatus);
+    if (provision !== null) {
+      suggestions.push({
+        icon: "🏷️",
+        text: `${provisionLongLabel(provision)} แต่รายการนี้เข้าเกณฑ์สั่งซื้อ ควรตรวจสอบก่อนสั่งเพิ่ม`,
+      });
+    }
   }
   if (item.calcStatus === "DANGER") {
     suggestions.push({

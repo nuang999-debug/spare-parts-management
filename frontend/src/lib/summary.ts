@@ -1,4 +1,5 @@
 import type { CalcTrend, ItemListRow, ItemUsageHistoryRow } from "../api/items";
+import { provisionMonths } from "./provision";
 
 export interface ChangeRow {
   itemNoRaw: string;
@@ -197,6 +198,49 @@ export function buildCategoryMinBreakdown(items: ItemListRow[]): CategoryMinBrea
     });
   }
   return rows;
+}
+
+export interface ProvisionTierRow {
+  months: number;
+  /** Parts of this tier that still have stock at N0 (parts with none are left out of every figure). */
+  items: number;
+  pieces: number;
+  /** Stock × Pur. Price, counted only for the parts that have a price. */
+  value: number;
+  pricedItems: number;
+}
+
+export interface ProvisionSummary {
+  tiers: ProvisionTierRow[];
+  items: number;
+  pieces: number;
+  value: number;
+  pricedItems: number;
+}
+
+/** Stock sitting under provision, split by the number of months (oldest tier first). */
+export function buildProvisionSummary(items: ItemListRow[]): ProvisionSummary {
+  const byMonths = new Map<number, ProvisionTierRow>();
+  for (const it of items) {
+    const months = provisionMonths(it.provisionStatus);
+    if (months === null || it.stockQty <= 0) continue;
+    const row = byMonths.get(months) ?? { months, items: 0, pieces: 0, value: 0, pricedItems: 0 };
+    row.items++;
+    row.pieces += it.stockQty;
+    if ((it.purchasePrice ?? 0) > 0) {
+      row.pricedItems++;
+      row.value += it.stockQty * (it.purchasePrice ?? 0);
+    }
+    byMonths.set(months, row);
+  }
+  const tiers = [...byMonths.values()].sort((a, b) => b.months - a.months);
+  return {
+    tiers,
+    items: tiers.reduce((s, t) => s + t.items, 0),
+    pieces: tiers.reduce((s, t) => s + t.pieces, 0),
+    value: tiers.reduce((s, t) => s + t.value, 0),
+    pricedItems: tiers.reduce((s, t) => s + t.pricedItems, 0),
+  };
 }
 
 export interface MonthsToNormal {

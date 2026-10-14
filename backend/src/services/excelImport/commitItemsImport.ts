@@ -75,6 +75,8 @@ interface ItemUpsertRow {
   remark: string | null;
   forModel: string | null;
   discontinuedModel: string | null;
+  description2: string | null;
+  provisionStatus: string | null;
   lastImportedAt: Date;
 }
 
@@ -154,6 +156,8 @@ function computeItemData(
     remark: row.remark,
     forModel: row.forModel,
     discontinuedModel: row.discontinuedModel,
+    description2: row.description2,
+    provisionStatus: row.provisionStatus,
     lastImportedAt: ctx.now,
   };
 }
@@ -211,6 +215,8 @@ async function bulkUpsertItems(
     "remark",
     "forModel",
     "discontinuedModel",
+    "description2",
+    "provisionStatus",
     "lastImportedAt",
     "updatedAt",
   ] as const;
@@ -229,7 +235,8 @@ async function bulkUpsertItems(
       ${r.recommendedMin}::double precision, ${r.suggestedOrderQty}::double precision,
       ${r.mustOrderByDate}::timestamp, ${r.prQtySuggested}::double precision,
       ${r.prQtyCurrent}::double precision, ${r.prIsOverride}::boolean, ${r.remark}, ${r.forModel},
-      ${r.discontinuedModel}, ${r.lastImportedAt}::timestamp, ${r.lastImportedAt}::timestamp
+      ${r.discontinuedModel}, ${r.description2}, ${r.provisionStatus},
+      ${r.lastImportedAt}::timestamp, ${r.lastImportedAt}::timestamp
     )`
   );
 

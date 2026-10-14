@@ -15,24 +15,32 @@ import {
   YAxis,
 } from "recharts";
 import { listItems, type ItemListRow } from "../api/items";
-import { buildCategoryMinBreakdown, buildSummaryData, calcMonthsToNormal, type ChangeRow } from "../lib/summary";
+import {
+  buildCategoryMinBreakdown,
+  buildProvisionSummary,
+  buildSummaryData,
+  calcMonthsToNormal,
+  type ChangeRow,
+} from "../lib/summary";
+import { provisionShortLabel, provisionTone } from "../lib/provision";
 import { exportSumMinChangeExcel, exportSumMinSheet, exportUsageContinuitySheet } from "../lib/summaryExport";
 
-const CHART_MUTED = "#94a3b8";
-const CHART_GRID = "#263044";
-const GREEN = "#22c55e";
-const RED = "#ef4444";
-const BLUE = "#4f9eff";
-const GRAY = "#94a3b8";
+// Theme variables, not hex: charts and colored text follow whichever theme is active.
+const CHART_MUTED = "var(--text-muted2)";
+const CHART_GRID = "var(--border)";
+const GREEN = "var(--success)";
+const RED = "var(--danger)";
+const BLUE = "var(--accent2)";
+const GRAY = "var(--flat)";
 const TOOLTIP_STYLE = {
-  background: "#1a2233",
-  border: "1px solid #263044",
+  background: "var(--card)",
+  border: "1px solid var(--border)",
   borderRadius: 6,
   fontSize: 12,
-  color: "#e2e8f0",
+  color: "var(--text)",
 };
 // Recharts sets each tooltip row's own inline color (defaulting to black, meant to match a
-// multi-series legend) regardless of `contentStyle`'s color above — on this dark tooltip
+// multi-series legend) regardless of `contentStyle`'s color above — on a dark tooltip
 // background that left every number invisible. `itemStyle`/`labelStyle` are the props that
 // actually reach those inner elements.
 const TOOLTIP_ITEM_STYLE = { color: TOOLTIP_STYLE.color };
@@ -103,6 +111,7 @@ export default function SummaryTab({ onGoToItem }: { onGoToItem: (itemNoRaw: str
 
   const summary = useMemo(() => buildSummaryData(items ?? []), [items]);
   const catMinBreakdown = useMemo(() => buildCategoryMinBreakdown(items ?? []), [items]);
+  const provision = useMemo(() => buildProvisionSummary(items ?? []), [items]);
 
   if (isLoading) return <p>Loading...</p>;
 
@@ -327,6 +336,53 @@ export default function SummaryTab({ onGoToItem }: { onGoToItem: (itemNoRaw: str
           )}
         </div>
       </div>
+
+      {provision.tiers.length > 0 && (
+        <div className="sum-sec">
+          <div className="sum-sec-hd">
+            <span>🏷️ สต็อกที่ติด Provision</span>
+            <span style={{ fontSize: "0.68rem", color: "var(--text-muted)", fontWeight: 400 }}>เฉพาะรายการที่มีสต็อก N0</span>
+          </div>
+          <div className="sum-sec-bd">
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "0.75rem" }}>
+              {provision.tiers.map((t) => (
+                <div className="sum-kc" key={t.months}>
+                  <div className="sum-kl">
+                    <span className={`prov-badge tone-${provisionTone(t.months)}`}>{provisionShortLabel(t.months)}</span>
+                  </div>
+                  <div className="sum-kv">
+                    {fmt(t.items)} <span style={{ fontSize: "0.75rem", fontWeight: 400, color: "var(--text-muted)" }}>รายการ</span>
+                  </div>
+                  <div className="sum-ks">{fmt(t.pieces)} ชิ้น</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop: "0.75rem", fontSize: "0.78rem" }}>
+              <span style={{ color: "var(--text-muted)" }}>รวม </span>
+              <b style={{ fontFamily: "var(--font-mono)" }}>{fmt(provision.items)}</b> รายการ ·{" "}
+              <b style={{ fontFamily: "var(--font-mono)" }}>{fmt(provision.pieces)}</b> ชิ้น · มูลค่าตามราคาซื้อ{" "}
+              <b style={{ fontFamily: "var(--font-mono)" }}>฿{fmt(provision.value)}</b>
+            </div>
+            {provision.pricedItems < provision.items && (
+              <div
+                style={{
+                  marginTop: "0.5rem",
+                  padding: "0.5rem 0.7rem",
+                  background: "color-mix(in srgb, var(--warning) 10%, transparent)",
+                  border: "1px solid color-mix(in srgb, var(--warning) 30%, transparent)",
+                  borderRadius: 6,
+                  fontSize: "0.72rem",
+                  lineHeight: 1.5,
+                  color: "var(--warning)",
+                }}
+              >
+                มูลค่านี้นับได้ {fmt(provision.pricedItems)} จาก {fmt(provision.items)} รายการ เพราะอีก{" "}
+                {fmt(provision.items - provision.pricedItems)} รายการไม่มีราคาซื้อในไฟล์ ตัวเลขจริงจะสูงกว่านี้
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="sum-two">
         <div className="sum-sec">

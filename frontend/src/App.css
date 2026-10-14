@@ -22,6 +22,12 @@
   --text-muted: #64748b;
   --text-muted2: #94a3b8;
 
+  /* Text on an --accent fill, and the scrollbar colors: both differ between light and dark themes. */
+  --on-accent: #000000;
+  --scroll-track: var(--border);
+  --scroll-thumb: var(--text-muted);
+  color-scheme: dark;
+
   --font-sans: "Sarabun", sans-serif;
   --font-mono: "IBM Plex Mono", monospace;
 
@@ -51,20 +57,217 @@
   --text: #1c2430;
   --text-muted: #6b7280;
   --text-muted2: #4b5563;
+
+  --on-accent: #ffffff;
+  --scroll-track: var(--card2);
+  --scroll-thumb: var(--border-strong);
+  color-scheme: light;
 }
 
-:root[data-theme="light"] ::-webkit-scrollbar-track {
-  background: var(--card2);
+/* ---------- extra themes (palettes from Catppuccin, Nord, Tokyo Night, Gruvbox, Everforest, Dracula,
+   Solarized; muted/status colors nudged where the original failed 4.5:1 text contrast) ---------- */
+
+/* Catppuccin Latte */
+:root[data-theme="latte"] {
+  color-scheme: light;
+  --bg: #e6e9ef;
+  --surf: #eff1f5;
+  --card: #ffffff;
+  --card2: #f5f5f5;
+  --border: #ccd0da;
+  --border-strong: #bcc0cc;
+
+  --accent: #8839ef;
+  --accent-hover: #7832d2;
+  --accent2: #1e66f5;
+  --accent3: #a95493;
+
+  --warning: #a06715;
+  --danger: #d20f39;
+  --success: #358323;
+  --flat: #5c5f77;
+
+  --text: #4c4f69;
+  --text-muted: #656878;
+  --text-muted2: #5c5f77;
+
+  --on-accent: #ffffff;
+  --scroll-track: #f5f5f5;
+  --scroll-thumb: #bcc0cc;
 }
 
-:root[data-theme="light"] ::-webkit-scrollbar-thumb {
-  background: var(--border-strong);
+/* Nord */
+:root[data-theme="nord"] {
+  color-scheme: dark;
+  --bg: #2e3440;
+  --surf: #353c4a;
+  --card: #3b4252;
+  --card2: #454b5b;
+  --border: #4c566a;
+  --border-strong: #5e6a82;
+
+  --accent: #88c0d0;
+  --accent-hover: #78a9b7;
+  --accent2: #98b2cb;
+  --accent3: #c5a7bf;
+
+  --warning: #ebcb8b;
+  --danger: #daa2a7;
+  --success: #a3be8c;
+  --flat: #d8dee9;
+
+  --text: #eceff4;
+  --text-muted: #a7b1c4;
+  --text-muted2: #d8dee9;
+
+  --on-accent: #000000;
+  --scroll-track: #4c566a;
+  --scroll-thumb: #a7b1c4;
 }
 
-:root[data-theme="light"] button[type="submit"],
-:root[data-theme="light"] .items-toolbar button:not([type="button"]),
-:root[data-theme="light"] form button:not([type="button"]) {
-  color: #fff;
+/* Tokyo Night */
+:root[data-theme="tokyo"] {
+  color-scheme: dark;
+  --bg: #16161e;
+  --surf: #1a1b26;
+  --card: #24283b;
+  --card2: #2f3345;
+  --border: #292e42;
+  --border-strong: #414868;
+
+  --accent: #7aa2f7;
+  --accent-hover: #6b8fd9;
+  --accent2: #7dcfff;
+  --accent3: #bb9af7;
+
+  --warning: #e0af68;
+  --danger: #f7768e;
+  --success: #9ece6a;
+  --flat: #a9b1d6;
+
+  --text: #c0caf5;
+  --text-muted: #8a90ae;
+  --text-muted2: #a9b1d6;
+
+  --on-accent: #000000;
+  --scroll-track: #292e42;
+  --scroll-thumb: #8a90ae;
+}
+
+/* Gruvbox Dark */
+:root[data-theme="gruvbox"] {
+  color-scheme: dark;
+  --bg: #1d2021;
+  --surf: #282828;
+  --card: #3c3836;
+  --card2: #464240;
+  --border: #504945;
+  --border-strong: #665c54;
+
+  --accent: #fe8019;
+  --accent-hover: #e07116;
+  --accent2: #88a99c;
+  --accent3: #d790a3;
+
+  --warning: #fabd2f;
+  --danger: #fb7b6c;
+  --success: #b8bb26;
+  --flat: #bdae93;
+
+  --text: #ebdbb2;
+  --text-muted: #aea18e;
+  --text-muted2: #bdae93;
+
+  --on-accent: #000000;
+  --scroll-track: #504945;
+  --scroll-thumb: #aea18e;
+}
+
+/* Everforest */
+:root[data-theme="everforest"] {
+  color-scheme: dark;
+  --bg: #232a2e;
+  --surf: #2d353b;
+  --card: #343f44;
+  --card2: #3e494d;
+  --border: #3d484d;
+  --border-strong: #475258;
+
+  --accent: #7fbbb3;
+  --accent-hover: #70a59e;
+  --accent2: #83c092;
+  --accent3: #d699b6;
+
+  --warning: #dbbc7f;
+  --danger: #ea9293;
+  --success: #a7c080;
+  --flat: #a1aca4;
+
+  --text: #dcd0b9;
+  --text-muted: #9faaa3;
+  --text-muted2: #a1aca4;
+
+  --on-accent: #000000;
+  --scroll-track: #3d484d;
+  --scroll-thumb: #9faaa3;
+}
+
+/* Dracula */
+:root[data-theme="dracula"] {
+  color-scheme: dark;
+  --bg: #21222c;
+  --surf: #282a36;
+  --card: #343746;
+  --card2: #3e414f;
+  --border: #44475a;
+  --border-strong: #6272a4;
+
+  --accent: #bd93f9;
+  --accent-hover: #a681db;
+  --accent2: #8be9fd;
+  --accent3: #ff79c6;
+
+  --warning: #ffb86c;
+  --danger: #ff7575;
+  --success: #50fa7b;
+  --flat: #bfc4d9;
+
+  --text: #f8f8f2;
+  --text-muted: #97a1c3;
+  --text-muted2: #bfc4d9;
+
+  --on-accent: #000000;
+  --scroll-track: #44475a;
+  --scroll-thumb: #97a1c3;
+}
+
+/* Solarized Light */
+:root[data-theme="solarized-light"] {
+  color-scheme: light;
+  --bg: #eee8d5;
+  --surf: #f5eedb;
+  --card: #fdf6e3;
+  --card2: #f3ecda;
+  --border: #e0d8c0;
+  --border-strong: #c9c1a8;
+
+  --accent: #2176b3;
+  --accent-hover: #1d689e;
+  --accent2: #207a72;
+  --accent3: #6468b4;
+
+  --warning: #8e6c00;
+  --danger: #d3302d;
+  --success: #687800;
+  --flat: #586e75;
+
+  --text: #073642;
+  --text-muted: #55686f;
+  --text-muted2: #586e75;
+
+  --on-accent: #ffffff;
+  --scroll-track: #f3ecda;
+  --scroll-thumb: #c9c1a8;
 }
 
 * {
@@ -100,12 +303,12 @@ h3 {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--border);
+  background: var(--scroll-track);
   border-radius: 6px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--text-muted);
+  background: var(--scroll-thumb);
   border-radius: 6px;
   border: 2px solid var(--border);
 }
@@ -124,7 +327,7 @@ button[type="submit"],
 .items-toolbar button:not([type="button"]),
 form button:not([type="button"]) {
   background: var(--accent);
-  color: #000;
+  color: var(--on-accent);
   border: 1px solid var(--accent);
   border-radius: var(--radius-sm);
   padding: 0.5rem 1.1rem;
@@ -234,8 +437,8 @@ select:focus {
 
 .login-error {
   color: var(--danger);
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent);
   border-radius: var(--radius-sm);
   padding: 0.5rem 0.7rem;
   font-size: 0.8rem;
@@ -317,9 +520,25 @@ select:focus {
   color: var(--text-muted2);
 }
 
-.theme-toggle {
-  border-radius: 999px !important;
-  padding: 0.4rem 0.8rem !important;
+.theme-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--text-muted2);
+}
+
+.theme-select select {
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: var(--card);
+  cursor: pointer;
+}
+
+.theme-select select:hover {
+  border-color: var(--accent);
 }
 
 .app-content {
@@ -585,7 +804,7 @@ select:focus {
 }
 
 .chg-item:hover {
-  background: rgba(79, 158, 255, 0.08);
+  background: color-mix(in srgb, var(--accent2) 8%, transparent);
 }
 
 .items-page {
@@ -685,12 +904,12 @@ select:focus {
 
 .hist-high {
   color: var(--success);
-  background: rgba(34, 197, 94, 0.09);
+  background: color-mix(in srgb, var(--success) 9%, transparent);
 }
 
 .hist-low {
   color: var(--danger);
-  background: rgba(239, 68, 68, 0.07);
+  background: color-mix(in srgb, var(--danger) 7%, transparent);
 }
 
 .avg-month6-cell {
@@ -698,10 +917,57 @@ select:focus {
   font-weight: 600;
 }
 
+/* Provision tiers: older = more severe. Orange has no theme token, so it blends the two that do. */
+/* Fixed 18px block, not an inline-block: inside a table cell an inline-block adds line-box (strut)
+   height, which pushed provision rows past the 32px row height and shifted the scrolling columns
+   out of line with the frozen code/name columns. 18px fits the 19.8px a cell has left after its
+   padding and border, so a badge can never make a row taller than a plain one. */
+.prov-badge {
+  --prov: var(--warning);
+  display: flex;
+  align-items: center;
+  width: fit-content;
+  height: 18px;
+  padding: 0 9px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--prov);
+  background: color-mix(in srgb, var(--prov) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--prov) 40%, transparent);
+}
+
+.prov-badge.tone-mid {
+  --prov: color-mix(in srgb, var(--warning) 55%, var(--danger));
+}
+
+.prov-badge.tone-high {
+  --prov: var(--danger);
+}
+
+.desc2-line {
+  margin: 0 0 0.75rem;
+  padding: 0.45rem 0.7rem;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  color: var(--text-muted2);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.desc2-line b {
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
 .sum-min-cell {
   color: var(--accent);
   font-weight: 700;
-  background: rgba(0, 212, 170, 0.04);
+  background: color-mix(in srgb, var(--accent) 4%, transparent);
 }
 
 .items-table-wrap {
@@ -914,19 +1180,19 @@ select:focus {
 }
 
 .items-table tbody tr:hover td {
-  background: rgba(255, 255, 255, 0.03);
+  background: color-mix(in srgb, var(--text) 4%, transparent);
   cursor: pointer;
 }
 
 .items-table tr.row-selected td {
-  background: rgba(0, 212, 170, 0.08) !important;
+  background: color-mix(in srgb, var(--accent) 8%, transparent) !important;
 }
 
 /* Model ยกเลิกขาย (discontinued from sale) — scoped to just the รหัส/ชื่ออะไหล่ cells (not the
    whole row), and deliberately louder than row-selected so the caution is never masked just
    because the row also happens to be the selected one. */
 .items-table td.cell-discontinued {
-  background: rgba(245, 158, 11, 0.16) !important;
+  background: color-mix(in srgb, var(--warning) 16%, transparent) !important;
 }
 
 /* ---------- badges / trend ---------- */
@@ -944,26 +1210,26 @@ select:focus {
 
 .badge-ok {
   color: var(--success);
-  border-color: rgba(34, 197, 94, 0.3);
-  background: rgba(34, 197, 94, 0.1);
+  border-color: color-mix(in srgb, var(--success) 30%, transparent);
+  background: color-mix(in srgb, var(--success) 10%, transparent);
 }
 
 .badge-warn {
   color: var(--warning);
-  border-color: rgba(245, 158, 11, 0.3);
-  background: rgba(245, 158, 11, 0.1);
+  border-color: color-mix(in srgb, var(--warning) 30%, transparent);
+  background: color-mix(in srgb, var(--warning) 10%, transparent);
 }
 
 .badge-danger {
   color: var(--danger);
-  border-color: rgba(239, 68, 68, 0.3);
-  background: rgba(239, 68, 68, 0.1);
+  border-color: color-mix(in srgb, var(--danger) 30%, transparent);
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
 }
 
 .badge-muted {
   color: var(--flat);
-  border-color: rgba(148, 163, 184, 0.3);
-  background: rgba(148, 163, 184, 0.08);
+  border-color: color-mix(in srgb, var(--flat) 30%, transparent);
+  background: color-mix(in srgb, var(--flat) 8%, transparent);
 }
 
 .trend-up {
@@ -1313,7 +1579,7 @@ select:focus {
 }
 
 .next-cell.tone-danger {
-  background: rgba(239, 68, 68, 0.1);
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
 }
 
 .tone-info {
@@ -1438,8 +1704,8 @@ select:focus {
 /* ---------- recommended purchase plan card ---------- */
 
 .plan-card {
-  background: linear-gradient(135deg, rgba(79, 158, 255, 0.05), rgba(0, 212, 170, 0.03));
-  border: 1px solid rgba(79, 158, 255, 0.25);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent2) 5%, transparent), color-mix(in srgb, var(--accent) 3%, transparent));
+  border: 1px solid color-mix(in srgb, var(--accent2) 25%, transparent);
   border-radius: var(--radius-md);
   padding: 0.9rem;
 }
@@ -1535,15 +1801,15 @@ select:focus {
    overall urgency tier — a "just needs planning" month still gets the same red highlight as an
    urgent one, it just isn't bold/colored text unless it's the actual trigger month. */
 .timeline-tab.above {
-  background: rgba(34, 197, 94, 0.06);
+  background: color-mix(in srgb, var(--success) 6%, transparent);
 }
 
 .timeline-tab.below {
-  background: rgba(239, 68, 68, 0.1);
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
 }
 
 .timeline-tab.trigger {
-  background: rgba(239, 68, 68, 0.25);
+  background: color-mix(in srgb, var(--danger) 25%, transparent);
   color: var(--danger);
   font-weight: 700;
 }
@@ -1722,8 +1988,8 @@ select:focus {
 
 .import-success {
   color: var(--success);
-  background: rgba(34, 197, 94, 0.1);
-  border: 1px solid rgba(34, 197, 94, 0.3);
+  background: color-mix(in srgb, var(--success) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--success) 30%, transparent);
   border-radius: var(--radius-sm);
   padding: 0.5rem 0.7rem;
   display: inline-block;
@@ -1767,7 +2033,7 @@ tbody tr:last-child td {
 }
 
 tbody tr:hover td {
-  background: rgba(255, 255, 255, 0.03);
+  background: color-mix(in srgb, var(--text) 4%, transparent);
 }
 
 /* ---------- history list (item detail edit history) ---------- */

@@ -5,6 +5,13 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Spare Parts Management</title>
+    <script>
+      // Apply the saved theme before first paint so a non-default theme doesn't flash dark on reload.
+      try {
+        var t = localStorage.getItem("spareparts_theme");
+        if (t && /^[a-z-]+$/.test(t)) document.documentElement.setAttribute("data-theme", t);
+      } catch (e) {}
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
   </head>

@@ -18,6 +18,20 @@ const HEADERS = [
 // optional (missing entirely on an older export) rather than a hard "missing column" error, so a
 // file from before this column existed still imports fine, just with every row's value as null.
 const DISCONTINUED_MODEL_HEADER = "MODEL ยกเลิกขาย";
+// Same optional treatment as DISCONTINUED_MODEL_HEADER: absent on exports from before they existed.
+const DESCRIPTION2_HEADER = "Description 2";
+const PROVISION_STATUS_HEADER = "Provision Status";
+
+/**
+ * Only the "Obsolete_<months>" values mean the part is under provision (e.g. Obsolete_24 = 24
+ * months). The same column also carries unrelated labels (High Runner, Slow Mover, New Introduced)
+ * that this app deliberately doesn't show, so they're dropped here rather than stored.
+ */
+export function parseProvisionStatus(v: unknown): string | null {
+  if (v === undefined || v === null) return null;
+  const m = String(v).trim().match(/^obsolete[_\s-]*(\d{1,3})$/i);
+  return m ? `Obsolete_${Number(m[1])}` : null;
+}
 
 const USAGE_MONTH_HEADERS = ["M-12", "M-11", "M-10", "M-9", "M-8", "M-7", "M-6", "M-5", "M-4", "M-3", "M-2", "M-1", "M-0"];
 const YEARLY_HEADERS = ["YDMD-2021", "YDMD-2022", "YDMD-2023", "YDMD-2024", "YDMD-2025", "YDMD-2026"];
@@ -54,6 +68,10 @@ export interface ParsedItemRow {
   /** e.g. "ยกเลิกขายCA330" — set when the model this part belongs to has been discontinued from
    *  sale, a signal to be cautious about reordering it. Null when the column is blank or absent. */
   discontinuedModel: string | null;
+  /** Free-text note: what the part is, or "REP BY <part no>" when another part replaces it. */
+  description2: string | null;
+  /** "Obsolete_<months>" when the part is under provision, otherwise null (see parseProvisionStatus). */
+  provisionStatus: string | null;
 }
 
 export interface ParseResult {
@@ -151,6 +169,10 @@ export function parseItemsRawWorkbook(buffer: Buffer): ParseResult {
   }
   const discontinuedModelIdx = normalizedHeaderRow.indexOf(normHdr(DISCONTINUED_MODEL_HEADER));
   if (discontinuedModelIdx !== -1) colIndex[DISCONTINUED_MODEL_HEADER] = discontinuedModelIdx;
+  const description2Idx = normalizedHeaderRow.indexOf(normHdr(DESCRIPTION2_HEADER));
+  if (description2Idx !== -1) colIndex[DESCRIPTION2_HEADER] = description2Idx;
+  const provisionStatusIdx = normalizedHeaderRow.indexOf(normHdr(PROVISION_STATUS_HEADER));
+  if (provisionStatusIdx !== -1) colIndex[PROVISION_STATUS_HEADER] = provisionStatusIdx;
 
   const dataRows = allRows.slice(headerRowIdx + 1);
   // Keyed by itemNoNormalized so a duplicate item number overwrites rather than
@@ -208,6 +230,8 @@ export function parseItemsRawWorkbook(buffer: Buffer): ParseResult {
       remark: toStringOrNull(raw[colIndex["Remark"]]),
       forModel: toStringOrNull(raw[colIndex["For Model"]]),
       discontinuedModel: toStringOrNull(raw[colIndex[DISCONTINUED_MODEL_HEADER]]),
+      description2: toStringOrNull(raw[colIndex[DESCRIPTION2_HEADER]]),
+      provisionStatus: parseProvisionStatus(raw[colIndex[PROVISION_STATUS_HEADER]]),
     });
   }
 

@@ -17,21 +17,24 @@ import { getItem, getItemHistory, type PoDueDateRow } from "../api/items";
 import { analyzeItem, computeWhatIfNext, nextCellTone, whatIfBucket } from "../lib/analysis";
 import { buildNarrative, buildPlanReasons, buildSuggestions, type Run } from "../lib/narrative";
 import { thaiMonthLabel, thaiDateShort } from "../lib/thaiMonths";
+import { provisionLongLabel, provisionMonths, provisionTone, splitReplacement } from "../lib/provision";
 
-const CHART_MUTED = "#94a3b8";
-const CHART_GRID = "#263044";
-const CHART_ACCENT = "#00d4aa";
-const CHART_ACCENT3 = "#a78bfa";
-const CHART_DANGER = "#ef4444";
+// Theme variables, not hex: the chart then follows whichever theme is active (SVG attributes and
+// inline styles both resolve var() at paint time).
+const CHART_MUTED = "var(--text-muted2)";
+const CHART_GRID = "var(--border)";
+const CHART_ACCENT = "var(--accent)";
+const CHART_ACCENT3 = "var(--accent3)";
+const CHART_DANGER = "var(--danger)";
 const TOOLTIP_STYLE = {
-  background: "#1a2233",
-  border: "1px solid #263044",
+  background: "var(--card)",
+  border: "1px solid var(--border)",
   borderRadius: 6,
   fontSize: 12,
-  color: "#e2e8f0",
+  color: "var(--text)",
 };
 // Recharts sets each tooltip row's own inline color (defaulting to black, meant to match a
-// multi-series legend) regardless of `contentStyle`'s color above — on this dark tooltip
+// multi-series legend) regardless of `contentStyle`'s color above — on a dark tooltip
 // background that left every number invisible. `itemStyle`/`labelStyle` are the props that
 // actually reach those inner elements.
 const TOOLTIP_ITEM_STYLE = { color: TOOLTIP_STYLE.color };
@@ -266,6 +269,24 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
         return (
           <div className="detail-panel-body">
             <h1 className="detail-title">{item.description}</h1>
+            {item.description2 &&
+              (() => {
+                const rep = splitReplacement(item.description2);
+                return (
+                  <div className="desc2-line">
+                    <span>Description 2: </span>
+                    {rep ? (
+                      <>
+                        {rep.head}
+                        <b>{rep.code}</b>
+                        {rep.tail}
+                      </>
+                    ) : (
+                      item.description2
+                    )}
+                  </div>
+                );
+              })()}
             {item.isStale && (
               <div
                 style={{
@@ -300,6 +321,16 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
                 <span className="chip-label">Vendor</span>
                 <span className="chip-value" style={{ color: "var(--text-muted2)" }}>{item.vendor ?? "—"}</span>
               </span>
+              {(() => {
+                const months = provisionMonths(item.provisionStatus);
+                if (months === null) return null;
+                return (
+                  <span className="chip">
+                    <span className="chip-label">Provision</span>
+                    <span className={`prov-badge tone-${provisionTone(months)}`}>{provisionLongLabel(months)}</span>
+                  </span>
+                );
+              })()}
             </div>
 
             <div className="detail-kpis">

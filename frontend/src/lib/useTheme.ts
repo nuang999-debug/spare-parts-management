@@ -1,25 +1,46 @@
 import { useEffect, useState } from "react";
 
-export type Theme = "dark" | "light";
+/** Each id has a matching `:root[data-theme="<id>"]` block in App.css ("dark" is the default :root). */
+export const THEMES = [
+  { id: "dark", label: "มืด" },
+  { id: "light", label: "สว่าง" },
+  { id: "latte", label: "Catppuccin Latte" },
+  { id: "nord", label: "Nord" },
+  { id: "tokyo", label: "Tokyo Night" },
+  { id: "gruvbox", label: "Gruvbox Dark" },
+  { id: "everforest", label: "Everforest" },
+  { id: "dracula", label: "Dracula" },
+  { id: "solarized-light", label: "Solarized Light" },
+] as const;
+
+export type Theme = (typeof THEMES)[number]["id"];
 
 const STORAGE_KEY = "spareparts_theme";
 
-function getInitialTheme(): Theme {
-  const saved = localStorage.getItem(STORAGE_KEY);
-  return saved === "light" ? "light" : "dark";
+function isTheme(v: string | null): v is Theme {
+  return THEMES.some((t) => t.id === v);
 }
 
-export function useTheme(): [Theme, () => void] {
+function getInitialTheme(): Theme {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return isTheme(saved) ? saved : "dark";
+  } catch {
+    return "dark";
+  }
+}
+
+export function useTheme(): [Theme, (theme: Theme) => void] {
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
-    localStorage.setItem(STORAGE_KEY, theme);
+    try {
+      localStorage.setItem(STORAGE_KEY, theme);
+    } catch {
+      // storage blocked (private window etc.): the theme still applies for this visit
+    }
   }, [theme]);
 
-  function toggleTheme() {
-    setTheme((t) => (t === "dark" ? "light" : "dark"));
-  }
-
-  return [theme, toggleTheme];
+  return [theme, setTheme];
 }

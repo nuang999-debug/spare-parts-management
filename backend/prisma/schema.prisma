@@ -127,6 +127,8 @@ model Item {
   remark            String?
   forModel          String?
   discontinuedModel String?
+  description2      String?
+  provisionStatus   String?
 
   lastImportedAt    DateTime?
   createdAt         DateTime   @default(now())
