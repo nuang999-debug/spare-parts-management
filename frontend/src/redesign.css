@@ -709,3 +709,24 @@ button[type="button"].fchip:hover:not(:disabled) {
     animation: none !important;
   }
 }
+
+/* extra cartoons used on the Summary tab cards */
+.kart-drive { animation: kart-drive 3s ease-in-out infinite; }
+.kart-lift { animation: kart-lift 3s ease-in-out infinite; }
+.kart-bob { animation: kart-bob 1.6s ease-in-out infinite; }
+@keyframes kart-drive { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(-4px); } }
+@keyframes kart-lift { 0%, 20%, 100% { transform: translateY(0); } 50%, 70% { transform: translateY(-14px); } }
+@keyframes kart-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+
+.sum-kc {
+  position: relative;
+  overflow: hidden;
+  container-type: inline-size;
+}
+.sum-kc .kart-slot { bottom: 4px; }
+
+@media print {
+  .kart-slot {
+    display: none !important;
+  }
+}

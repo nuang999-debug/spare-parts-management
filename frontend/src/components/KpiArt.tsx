@@ -124,3 +124,56 @@ export function ArtValue() {
     </svg>
   );
 }
+
+/** Stock N0 รวม — a little forklift lifting a box up and down. */
+export function ArtForklift() {
+  return (
+    <svg className="kart" viewBox="0 0 84 76" aria-hidden focusable="false">
+      <rect x="4" y="66" width="76" height="4" rx="2" fill={FLOOR} />
+      <g className="kart-drive">
+        <rect x="40" y="38" width="30" height="20" rx="4" fill="#5DCAA5" stroke="#0F6E56" />
+        <path d="M46 38 v-14 h16 l4 14" fill="#E1F5EE" stroke="#0F6E56" />
+        <circle cx="47" cy="61" r="5" fill="#2C2C2A" />
+        <circle cx="64" cy="61" r="5" fill="#2C2C2A" />
+        <circle cx="47" cy="61" r="1.8" fill="#B4B2A9" />
+        <circle cx="64" cy="61" r="1.8" fill="#B4B2A9" />
+        <rect x="35" y="16" width="3" height="46" rx="1" fill="#444441" />
+        <g className="kart-lift">
+          <rect x="18" y="50" width="20" height="3" rx="1" fill="#444441" />
+          <rect x="18" y="34" width="18" height="16" rx="3" fill="#FAC775" stroke="#BA7517" />
+          <line x1="18" y1="40" x2="36" y2="40" stroke="#BA7517" />
+        </g>
+        <g className="kart-blink">
+          <circle cx="56" cy="31" r="1.6" fill="#04342C" />
+          <circle cx="61" cy="31" r="1.6" fill="#04342C" />
+        </g>
+      </g>
+    </svg>
+  );
+}
+
+/** มูลค่า Stock รวม — a money bag with coins bobbing beside it. */
+export function ArtMoneyBag() {
+  return (
+    <svg className="kart" viewBox="0 0 84 76" aria-hidden focusable="false">
+      <rect x="4" y="66" width="76" height="4" rx="2" fill={FLOOR} />
+      <g className="kart-hop kart-slow">
+        <path d="M30 30 q-14 12 -12 26 q2 10 18 10 h12 q16 0 18 -10 q2 -14 -12 -26 Z" fill="#FAC775" stroke="#854F0B" />
+        <path d="M34 30 l-4 -10 q12 6 24 0 l-4 10 Z" fill="#EF9F27" stroke="#854F0B" />
+        <rect x="32" y="27" width="20" height="4" rx="2" fill="#854F0B" />
+        <text x="42" y="56" fontSize="15" fontWeight="700" textAnchor="middle" fill="#633806" fontFamily="inherit">
+          ฿
+        </text>
+        <g className="kart-blink">
+          <circle cx="36" cy="43" r="1.6" fill="#412402" />
+          <circle cx="48" cy="43" r="1.6" fill="#412402" />
+        </g>
+      </g>
+      <g className="kart-bob">
+        <ellipse cx="72" cy="62" rx="7" ry="3" fill="#EF9F27" stroke="#854F0B" />
+        <ellipse cx="72" cy="57" rx="7" ry="3" fill="#FAC775" stroke="#854F0B" />
+        <ellipse cx="72" cy="52" rx="7" ry="3" fill="#FAC775" stroke="#854F0B" />
+      </g>
+    </svg>
+  );
+}

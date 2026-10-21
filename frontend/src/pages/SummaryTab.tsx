@@ -15,6 +15,7 @@ import {
   YAxis,
 } from "recharts";
 import { listItems, type ItemListRow } from "../api/items";
+import { ArtDanger, ArtForklift, ArtMoneyBag, ArtPr, ArtStock } from "../components/KpiArt";
 import {
   buildCategoryMinBreakdown,
   buildProvisionSummary,
@@ -201,12 +202,14 @@ export default function SummaryTab({ onGoToItem }: { onGoToItem: (itemNoRaw: str
             {fmt(totalItems)}
           </div>
           <div className="sum-ks">รายการที่มี Sum MIN</div>
+          <span className="kart-slot"><ArtStock /></span>
         </div>
         <div className="sum-kc">
           <div className="sum-kl">Stock N0 รวม</div>
           <div className="sum-kv" style={{ color: "var(--accent2)" }}>
             {fmt(totalStock)} ชิ้น
           </div>
+          <span className="kart-slot"><ArtForklift /></span>
         </div>
         <div className="sum-kc">
           <div className="sum-kl">มูลค่า Stock รวม</div>
@@ -214,6 +217,7 @@ export default function SummaryTab({ onGoToItem }: { onGoToItem: (itemNoRaw: str
             ฿{(totalValue / 1e6).toFixed(2)}M
           </div>
           <div className="sum-ks">Stock×Pur.Price</div>
+          <span className="kart-slot"><ArtMoneyBag /></span>
         </div>
         <div className="sum-kc">
           <div className="sum-kl">🔴 วิกฤต / 🟡 ระวัง</div>
@@ -221,6 +225,7 @@ export default function SummaryTab({ onGoToItem }: { onGoToItem: (itemNoRaw: str
             {dangerCnt} / {warnCnt}
           </div>
           <div className="sum-ks">Next&lt;SUM MIN</div>
+          <span className="kart-slot"><ArtDanger /></span>
         </div>
         <div className="sum-kc">
           <div className="sum-kl">PR qty รอเปิด</div>
@@ -228,6 +233,7 @@ export default function SummaryTab({ onGoToItem }: { onGoToItem: (itemNoRaw: str
             {fmt(prItems)} รายการ
           </div>
           <div className="sum-ks">มูลค่า ฿{(prValue / 1e6).toFixed(2)}M</div>
+          <span className="kart-slot"><ArtPr /></span>
         </div>
       </div>
 
