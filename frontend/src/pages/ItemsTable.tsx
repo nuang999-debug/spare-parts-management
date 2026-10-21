@@ -107,7 +107,7 @@ const columnHelper = createColumnHelper<ItemListRow>();
 /** These two columns render in a separate, non-horizontally-scrolling "frozen" table on the left,
  * so รหัส/ชื่ออะไหล่ stay visible while the rest of the table scrolls — avoids position:sticky
  * on table cells entirely, since that combination is unreliable across browsers/rendering engines. */
-const FROZEN_COLUMN_IDS = new Set(["itemNoRaw", "description", "calcStatus"]);
+const FROZEN_COLUMN_IDS = new Set(["itemNoRaw", "description"]);
 
 /** First NEXT month whose projected stock falls below Sum MIN ("time till shortage" in MRP terms),
  *  or null when NEXT-0..5 all stay at or above it (or the item has no Sum MIN). */
@@ -187,17 +187,6 @@ const columns = [
     size: 220,
     filterFn: descriptionSearchFilter,
     meta: { filterType: "text", filterTitle: "ค้นหาจากชื่อ และ Description 2" },
-  }),
-  columnHelper.accessor("calcStatus", {
-    header: "สถานะ",
-    size: 70,
-    filterFn: "equalsString",
-    meta: {
-      filterType: "select",
-      selectOptions: ["DANGER", "WARN", "OK"],
-      selectLabel: (v) => ({ DANGER: "วิกฤต", WARN: "ระวัง", OK: "ปกติ" })[v] ?? v,
-    },
-    cell: (info) => <StatusBadge status={info.getValue()} />,
   }),
   columnHelper.accessor((row) => shortageMonth(row), {
     id: "shortage",
@@ -337,6 +326,17 @@ const columns = [
   nextColumn(3),
   nextColumn(4),
   nextColumn(5),
+  columnHelper.accessor("calcStatus", {
+    header: "สถานะ",
+    size: 70,
+    filterFn: "equalsString",
+    meta: {
+      filterType: "select",
+      selectOptions: ["DANGER", "WARN", "OK"],
+      selectLabel: (v) => ({ DANGER: "วิกฤต", WARN: "ระวัง", OK: "ปกติ" })[v] ?? v,
+    },
+    cell: (info) => <StatusBadge status={info.getValue()} />,
+  }),
 ];
 
 function FilterCell({ column, items }: { column: Column<ItemListRow, unknown>; items: ItemListRow[] }) {

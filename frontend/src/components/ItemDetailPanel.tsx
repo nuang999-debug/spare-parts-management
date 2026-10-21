@@ -427,28 +427,6 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
               </div>
             </div>
 
-            <section className="pab-strip" aria-label="Stock คาดการณ์ NEXT-0..5">
-              <div className="pab-head">
-                <span>Stock คาดการณ์รายเดือน (NEXT)</span>
-                <span className="pab-min">Sum MIN {fmt(item.sumMin, 0)}</span>
-              </div>
-              <div className="pab-grid">
-                {a.next.map((v, i) => {
-                  const tone = nextCellTone(v, item.sumMin);
-                  const first = i === a.triggerMonth;
-                  return (
-                    <div key={i} className={`pab-cell tone-${tone}${first ? " first" : ""}`} title={first ? "เดือนแรกที่ต่ำกว่า Sum MIN" : undefined}>
-                      <span className="pab-label">
-                        NEXT-{i} {thaiMonthLabel(i)}
-                      </span>
-                      <span className="pab-value">{fmtN(v, 1)}</span>
-                      {first && <span className="pab-flag">ขาดเดือนแรก</span>}
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-
             <span id="sec-charts" className="dp-anchor" />
             <div className="detail-charts-grid">
               <section className="detail-chart-card">
