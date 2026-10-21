@@ -34,14 +34,14 @@ function Card({
       className={`kc kc-${tone}${onClick ? " kc-click" : ""}${active ? " on" : ""}`}
       title={hint}
     >
-      <div className="klbl">
+      <span className="klbl">
         <span className="kicon" aria-hidden>
           <Icon size={14} strokeWidth={2} />
         </span>
         {label}
-      </div>
-      <div className="kval">{value}</div>
-      {sub && <div className="ksub">{sub}</div>}
+      </span>
+      <span className="kval">{value}</span>
+      {sub && <span className="ksub">{sub}</span>}
       {art && <span className="kart-slot">{art}</span>}
     </Tag>
   );

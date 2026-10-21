@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink, Outlet, Navigate } from "react-router-dom";
 import {
   Boxes,
@@ -18,6 +18,20 @@ import { useAuth } from "../auth/AuthContext";
 import { THEMES, useTheme, type Theme } from "../lib/useTheme";
 
 const NAV_KEY = "spareparts_nav_collapsed";
+/** Below this width the full menu would squeeze the table (especially with the detail panel
+ *  open), so it starts collapsed to icons; the user can still open it for the moment. */
+const NARROW_QUERY = "(max-width: 1279px)";
+
+function useNarrow(): boolean {
+  const [narrow, setNarrow] = useState(() => window.matchMedia(NARROW_QUERY).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(NARROW_QUERY);
+    const on = () => setNarrow(mq.matches);
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  return narrow;
+}
 
 function readCollapsed(): boolean {
   try {
@@ -40,12 +54,20 @@ export default function AppShell() {
   const { user, logout } = useAuth();
   const [theme, setTheme] = useTheme();
   const [collapsed, setCollapsed] = useState(readCollapsed);
+  const narrow = useNarrow();
+  const [narrowOpen, setNarrowOpen] = useState(false);
+  useEffect(() => setNarrowOpen(false), [narrow]);
+  const isCollapsed = narrow ? !narrowOpen : collapsed;
 
   if (user?.mustChangePassword) {
     return <Navigate to="/change-password" replace />;
   }
 
   function toggleCollapsed() {
+    if (narrow) {
+      setNarrowOpen((o) => !o);
+      return;
+    }
     setCollapsed((c) => {
       try {
         localStorage.setItem(NAV_KEY, c ? "0" : "1");
@@ -59,7 +81,7 @@ export default function AppShell() {
   const initials = (user?.displayName ?? "?").trim().slice(0, 2).toUpperCase();
 
   return (
-    <div className={`app-shell-layout${collapsed ? " nav-collapsed" : ""}`}>
+    <div className={`app-shell-layout${isCollapsed ? " nav-collapsed" : ""}`}>
       <aside className="side-nav">
         <div className="side-brand">
           <span className="side-logo" aria-hidden>
@@ -111,10 +133,10 @@ export default function AppShell() {
             type="button"
             className="icon-btn side-collapse"
             onClick={toggleCollapsed}
-            title={collapsed ? "ขยายเมนู" : "ย่อเมนู"}
-            aria-label={collapsed ? "ขยายเมนู" : "ย่อเมนู"}
+            title={isCollapsed ? "ขยายเมนู" : "ย่อเมนู"}
+            aria-label={isCollapsed ? "ขยายเมนู" : "ย่อเมนู"}
           >
-            {collapsed ? <PanelLeftOpen size={16} strokeWidth={1.8} /> : <PanelLeftClose size={16} strokeWidth={1.8} />}
+            {isCollapsed ? <PanelLeftOpen size={16} strokeWidth={1.8} /> : <PanelLeftClose size={16} strokeWidth={1.8} />}
           </button>
         </div>
       </aside>

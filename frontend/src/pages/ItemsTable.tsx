@@ -442,10 +442,14 @@ export default function ItemsTable({
   const kpiActive: KpiFilter =
     statusFilter === "DANGER" ? "DANGER" : statusFilter === "WARN" ? "WARN" : String(prFilter ?? "") === "1" ? "PR" : null;
   function selectKpi(f: KpiFilter) {
+    // Each card owns one filter: the status cards the สถานะ filter, the PR card a "PR ≥ 1"
+    // filter. Switching cards drops only what a card set, never a filter typed in by hand.
     setColumnFilters((prev) => {
-      const rest = prev.filter((x) => x.id !== "calcStatus" && x.id !== "prQtyCurrent");
+      const ownedByCard = (x: { id: string; value: unknown }) =>
+        x.id === "calcStatus" || (x.id === "prQtyCurrent" && String(x.value) === "1");
+      const rest = prev.filter((x) => !ownedByCard(x));
       if (f === "DANGER" || f === "WARN") return [...rest, { id: "calcStatus", value: f }];
-      if (f === "PR") return [...rest, { id: "prQtyCurrent", value: "1" }];
+      if (f === "PR") return [...rest.filter((x) => x.id !== "prQtyCurrent"), { id: "prQtyCurrent", value: "1" }];
       return rest;
     });
   }
@@ -836,6 +840,9 @@ export default function ItemsTable({
           {user?.role === "ADMIN" && (
             <div
               className="more-wrap"
+              onKeyDown={(e) => {
+                if (e.key === "Escape") setMoreOpen(false);
+              }}
               onBlur={(e) => {
                 if (!e.currentTarget.contains(e.relatedTarget as Node)) setMoreOpen(false);
               }}

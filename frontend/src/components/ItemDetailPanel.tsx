@@ -155,7 +155,8 @@ const MAX_WIDTH = 900;
 
 export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; onClose: () => void }) {
   const [collapsed, setCollapsed] = useState(false);
-  const [width, setWidth] = useState(DEFAULT_WIDTH);
+  // Up to 40% of the window, so on a small screen the table keeps room for its frozen columns.
+  const [width, setWidth] = useState(() => Math.min(DEFAULT_WIDTH, Math.round(window.innerWidth * 0.4)));
   const dragStart = useRef<{ x: number; width: number } | null>(null);
   const panelRef = useRef<HTMLElement>(null);
   const { data: item, isLoading } = useQuery({

@@ -744,3 +744,9 @@ button[type="button"].fchip:hover:not(:disabled) {
 @keyframes kart-dust { 0% { transform: translate(0, 0); opacity: 0.8; } 100% { transform: translate(-6px, -10px); opacity: 0; } }
 @keyframes kart-swing { 0%, 100% { transform: rotate(-10deg); } 50% { transform: rotate(10deg); } }
 @keyframes kart-fly { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-5px, -3px); } }
+
+/* KPI card parts are spans (valid inside <button>); keep them stacked */
+.kc .kval,
+.kc .ksub {
+  display: block;
+}
