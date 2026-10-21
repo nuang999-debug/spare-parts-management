@@ -177,3 +177,81 @@ export function ArtMoneyBag() {
     </svg>
   );
 }
+
+/** Provision tiers — the box gets older the longer stock sits under provision:
+ *  low (12 months) sleepy box, mid (18) dusty box with a fly, high (24) grandpa box under cobwebs. */
+export function ArtProvision({ tone }: { tone: "low" | "mid" | "high" }) {
+  if (tone === "low") {
+    return (
+      <svg className="kart" viewBox="0 0 84 76" aria-hidden focusable="false">
+        <text className="kart-zzz" x="54" y="30" fontSize="11" fontWeight="600" fill="#BA7517" fontFamily="inherit">
+          z
+        </text>
+        <text className="kart-zzz kart-zzz2" x="60" y="22" fontSize="14" fontWeight="600" fill="#BA7517" fontFamily="inherit">
+          Z
+        </text>
+        <rect x="4" y="66" width="76" height="4" rx="2" fill={FLOOR} />
+        <g className="kart-breathe">
+          <rect x="18" y="32" width="34" height="34" rx="4" fill="#FAC775" stroke="#854F0B" />
+          <line x1="18" y1="41" x2="52" y2="41" stroke="#854F0B" />
+          <path d="M25 51 q3 3 6 0 M38 51 q3 3 6 0" stroke="#412402" fill="none" strokeLinecap="round" />
+          <ellipse cx="35" cy="59" rx="2.5" ry="2" fill="#412402" />
+          <circle cx="23" cy="56" r="2" fill="#F0997B" opacity=".7" />
+          <circle cx="47" cy="56" r="2" fill="#F0997B" opacity=".7" />
+          <path d="M16 34 q19 -12 38 0 l-4 -6 q-15 -8 -30 0 Z" fill="#378ADD" stroke="#185FA5" />
+          <circle cx="54" cy="32" r="3" fill="#E6F1FB" stroke="#185FA5" />
+        </g>
+      </svg>
+    );
+  }
+  if (tone === "mid") {
+    return (
+      <svg className="kart" viewBox="0 0 84 76" aria-hidden focusable="false">
+        <path d="M54 22 L74 22 L74 42 Z" fill="none" stroke="#B4B2A9" strokeWidth=".8" />
+        <path d="M62 22 L74 32 M68 22 L74 27" stroke="#B4B2A9" strokeWidth=".6" />
+        <rect x="4" y="66" width="76" height="4" rx="2" fill={FLOOR} />
+        <g className="kart-breathe">
+          <rect x="18" y="30" width="34" height="36" rx="4" fill="#F5C4B3" stroke="#993C1D" />
+          <line x1="18" y1="39" x2="52" y2="39" stroke="#993C1D" />
+          <path d="M26 50 h6 M38 50 h6" stroke="#4A1B0C" strokeWidth="2" strokeLinecap="round" />
+          <path d="M31 58 q4 2 8 0" stroke="#4A1B0C" fill="none" strokeLinecap="round" />
+          <circle cx="24" cy="44" r="2" fill="#D3D1C7" />
+          <circle cx="46" cy="58" r="2.5" fill="#D3D1C7" />
+          <circle cx="40" cy="34" r="1.6" fill="#D3D1C7" />
+        </g>
+        <circle className="kart-dust" cx="16" cy="40" r="2.5" fill="#B4B2A9" />
+        <circle className="kart-dust kart-dust2" cx="56" cy="50" r="2" fill="#B4B2A9" />
+        <g className="kart-fly">
+          <ellipse cx="66" cy="54" rx="3" ry="2" fill="#444441" />
+          <ellipse cx="65" cy="51" rx="2.5" ry="1.5" fill="#D3D1C7" opacity=".8" />
+          <ellipse cx="68" cy="51" rx="2.5" ry="1.5" fill="#D3D1C7" opacity=".8" />
+        </g>
+      </svg>
+    );
+  }
+  return (
+    <svg className="kart" viewBox="0 0 84 76" aria-hidden focusable="false">
+      <path d="M44 4 L84 4 L84 34 Z" fill="none" stroke="#B4B2A9" strokeWidth=".8" />
+      <path d="M60 4 L84 22 M70 4 L84 14 M52 4 L84 28" stroke="#B4B2A9" strokeWidth=".6" />
+      <g className="kart-swing">
+        <line x1="66" y1="4" x2="66" y2="24" stroke="#888780" strokeWidth=".8" />
+        <circle cx="66" cy="27" r="3.5" fill="#444441" />
+        <path d="M62 25 l-3 -2 M62 28 l-3 1 M70 25 l3 -2 M70 28 l3 1" stroke="#444441" />
+      </g>
+      <rect x="4" y="66" width="76" height="4" rx="2" fill={FLOOR} />
+      <g className="kart-wiggle">
+        <rect x="16" y="32" width="32" height="34" rx="4" fill="#D3D1C7" stroke="#5F5E5A" />
+        <line x1="16" y1="41" x2="48" y2="41" stroke="#5F5E5A" />
+        <path d="M24 50 q3 -2 6 0 M34 50 q3 -2 6 0" stroke="#2C2C2A" fill="none" strokeLinecap="round" />
+        <path d="M27 58 q5 -3 10 0" stroke="#2C2C2A" fill="none" strokeLinecap="round" />
+        <path d="M22 56 q10 6 20 0" stroke="#F1EFE8" strokeWidth="3" fill="none" strokeLinecap="round" />
+        <circle cx="27" cy="50" r="5" fill="none" stroke="#444441" />
+        <circle cx="38" cy="50" r="5" fill="none" stroke="#444441" />
+        <line x1="32" y1="50" x2="33" y2="50" stroke="#444441" />
+      </g>
+      <path d="M56 66 V44 q0 -6 6 -6" stroke="#854F0B" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+      <circle className="kart-dust" cx="14" cy="34" r="2.5" fill="#B4B2A9" />
+      <circle className="kart-dust kart-dust2" cx="50" cy="30" r="2" fill="#B4B2A9" />
+    </svg>
+  );
+}

@@ -730,3 +730,17 @@ button[type="button"].fchip:hover:not(:disabled) {
     display: none !important;
   }
 }
+
+/* provision-tier cartoons */
+.kart-zzz { animation: kart-zzz 2.4s ease-out infinite; }
+.kart-zzz2 { animation-delay: 1.2s; }
+.kart-breathe { animation: kart-breathe 2.4s ease-in-out infinite; transform-origin: 50% 100%; }
+.kart-dust { animation: kart-dust 1.8s ease-out infinite; }
+.kart-dust2 { animation-delay: 0.9s; }
+.kart-swing { animation: kart-swing 2.2s ease-in-out infinite; transform-origin: 50% 0; }
+.kart-fly { animation: kart-fly 1.4s ease-in-out infinite; }
+@keyframes kart-zzz { 0% { transform: translate(0, 0); opacity: 0; } 20% { opacity: 1; } 100% { transform: translate(8px, -16px); opacity: 0; } }
+@keyframes kart-breathe { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(0.96); } }
+@keyframes kart-dust { 0% { transform: translate(0, 0); opacity: 0.8; } 100% { transform: translate(-6px, -10px); opacity: 0; } }
+@keyframes kart-swing { 0%, 100% { transform: rotate(-10deg); } 50% { transform: rotate(10deg); } }
+@keyframes kart-fly { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-5px, -3px); } }

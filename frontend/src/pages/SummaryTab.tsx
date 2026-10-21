@@ -15,7 +15,7 @@ import {
   YAxis,
 } from "recharts";
 import { listItems, type ItemListRow } from "../api/items";
-import { ArtDanger, ArtForklift, ArtMoneyBag, ArtPr, ArtStock } from "../components/KpiArt";
+import { ArtDanger, ArtForklift, ArtMoneyBag, ArtPr, ArtProvision, ArtStock } from "../components/KpiArt";
 import {
   buildCategoryMinBreakdown,
   buildProvisionSummary,
@@ -360,6 +360,9 @@ export default function SummaryTab({ onGoToItem }: { onGoToItem: (itemNoRaw: str
                     {fmt(t.items)} <span style={{ fontSize: "0.75rem", fontWeight: 400, color: "var(--text-muted)" }}>รายการ</span>
                   </div>
                   <div className="sum-ks">{fmt(t.pieces)} ชิ้น</div>
+                  <span className="kart-slot">
+                    <ArtProvision tone={provisionTone(t.months)} />
+                  </span>
                 </div>
               ))}
             </div>
