@@ -1,5 +1,8 @@
 import { AlertOctagon, AlertTriangle, Coins, FileText, Layers, type LucideIcon } from "lucide-react";
+import type { ReactNode } from "react";
 import type { ItemListRow } from "../api/items";
+import { ArtDanger, ArtPr, ArtStock, ArtValue, ArtWarn } from "./KpiArt";
+import { thaiMonthLabel } from "../lib/thaiMonths";
 
 export type KpiFilter = "DANGER" | "WARN" | "PR" | null;
 
@@ -12,6 +15,7 @@ function Card({
   active,
   onClick,
   hint,
+  art,
 }: {
   icon: LucideIcon;
   label: string;
@@ -21,6 +25,7 @@ function Card({
   active?: boolean;
   onClick?: () => void;
   hint?: string;
+  art?: ReactNode;
 }) {
   const Tag = onClick ? "button" : "div";
   return (
@@ -37,6 +42,7 @@ function Card({
       </div>
       <div className="kval">{value}</div>
       {sub && <div className="ksub">{sub}</div>}
+      {art && <span className="kart-slot">{art}</span>}
     </Tag>
   );
 }
@@ -62,7 +68,7 @@ export default function KpiBar({
 
   return (
     <div className="kpi-bar">
-      <Card icon={Layers} tone="accent" label="รายการทั้งหมด" value={total.toLocaleString()} sub={`${withMin.toLocaleString()} รายการมี Sum MIN`} />
+      <Card icon={Layers} tone="accent" label="รายการทั้งหมด" value={total.toLocaleString()} sub={`${withMin.toLocaleString()} รายการมี Sum MIN`} art={<ArtStock />} />
       <Card
         icon={AlertOctagon}
         tone="danger"
@@ -72,6 +78,7 @@ export default function KpiBar({
         active={active === "DANGER"}
         onClick={onSelect ? () => toggle("DANGER") : undefined}
         hint="คลิกเพื่อกรองเฉพาะรายการวิกฤต"
+        art={<ArtDanger />}
       />
       <Card
         icon={AlertTriangle}
@@ -82,6 +89,7 @@ export default function KpiBar({
         active={active === "WARN"}
         onClick={onSelect ? () => toggle("WARN") : undefined}
         hint="คลิกเพื่อกรองเฉพาะรายการระวัง"
+        art={<ArtWarn monthLabel={thaiMonthLabel(1)} />}
       />
       <Card
         icon={FileText}
@@ -92,8 +100,9 @@ export default function KpiBar({
         active={active === "PR"}
         onClick={onSelect ? () => toggle("PR") : undefined}
         hint="คลิกเพื่อกรองเฉพาะรายการที่มี PR"
+        art={<ArtPr />}
       />
-      <Card icon={Coins} tone="warning" label="มูลค่า PR รวม" value={`฿${(prValue / 1e6).toFixed(2)}M`} sub="ตามราคาซื้อ" />
+      <Card icon={Coins} tone="warning" label="มูลค่า PR รวม" value={`฿${(prValue / 1e6).toFixed(2)}M`} sub="ตามราคาซื้อ" art={<ArtValue />} />
     </div>
   );
 }

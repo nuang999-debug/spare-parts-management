@@ -643,3 +643,69 @@ button[type="button"].fchip:hover:not(:disabled) {
   align-items: center;
   gap: 0.4rem;
 }
+
+/* ---------- KPI card cartoons (KpiArt.tsx) ---------- */
+
+.kc {
+  container-type: inline-size;
+  overflow: hidden;
+}
+
+.kart-slot {
+  position: absolute;
+  right: 6px;
+  bottom: 2px;
+  width: 74px;
+  height: 66px;
+  pointer-events: none;
+}
+
+.kart {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* Not enough room beside the number: hide the cartoon rather than let it cover the text. */
+@container (max-width: 200px) {
+  .kart-slot {
+    display: none;
+  }
+}
+
+.kart * {
+  transform-box: fill-box;
+}
+
+.kart-hop { animation: kart-hop 1.8s ease-in-out infinite; transform-origin: 50% 100%; }
+.kart-slow { animation-duration: 2s; }
+.kart-blink { animation: kart-blink 3.5s infinite; transform-origin: center; }
+.kart-siren { animation: kart-siren 0.8s ease-in-out infinite; }
+.kart-shake { animation: kart-shake 0.4s linear infinite; }
+.kart-sweat { animation: kart-sweat 1.2s ease-in infinite; }
+.kart-flip { animation: kart-flip 3s ease-in-out infinite; transform-origin: center; }
+.kart-look { animation: kart-look 2.2s ease-in-out infinite; }
+.kart-tick { stroke-dasharray: 20; animation: kart-tick 2.4s ease-in-out infinite; }
+.kart-tick2 { animation-delay: 0.8s; }
+.kart-pen { animation: kart-pen 1.2s ease-in-out infinite; transform-origin: 100% 0; }
+.kart-wiggle { animation: kart-wiggle 2s ease-in-out infinite; transform-origin: 50% 100%; }
+.kart-coin { animation: kart-coin 2s ease-in infinite; }
+.kart-coin2 { animation-delay: 1s; }
+
+@keyframes kart-hop { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-9px); } 55% { transform: translateY(-9px) rotate(-4deg); } }
+@keyframes kart-blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
+@keyframes kart-siren { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
+@keyframes kart-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-2px); } 75% { transform: translateX(2px); } }
+@keyframes kart-sweat { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(8px); opacity: 0; } }
+@keyframes kart-flip { 0%, 40% { transform: rotate(0); } 60%, 100% { transform: rotate(180deg); } }
+@keyframes kart-look { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(4px); } }
+@keyframes kart-tick { 0%, 30% { stroke-dashoffset: 20; } 60%, 100% { stroke-dashoffset: 0; } }
+@keyframes kart-pen { 0%, 100% { transform: translate(0, 0) rotate(0); } 50% { transform: translate(-6px, 4px) rotate(-8deg); } }
+@keyframes kart-wiggle { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-3deg); } }
+@keyframes kart-coin { 0% { transform: translateY(-26px); opacity: 0; } 15% { opacity: 1; } 55% { transform: translateY(0); opacity: 1; } 70%, 100% { transform: translateY(4px); opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .kart * {
+    animation: none !important;
+  }
+}
