@@ -18,6 +18,32 @@ import { analyzeItem, computeWhatIfNext, nextCellTone, whatIfBucket } from "../l
 import { buildNarrative, buildPlanReasons, buildSuggestions, type Run } from "../lib/narrative";
 import { thaiMonthLabel, thaiDateShort } from "../lib/thaiMonths";
 import { provisionLongLabel, provisionMonths, provisionTone, splitReplacement } from "../lib/provision";
+import {
+  AlertTriangle,
+  BrainCircuit,
+  CheckCircle2,
+  ChevronsRight,
+  ChevronsLeft,
+  ClipboardCheck,
+  Flag,
+  Truck,
+  Warehouse,
+  ShoppingBag,
+  TrendingUp,
+  Target,
+  Activity,
+  X,
+} from "lucide-react";
+import { StatusBadge } from "./StatusBadge";
+
+const SECTIONS: Array<[string, string]> = [
+  ["sec-overview", "ภาพรวม"],
+  ["sec-charts", "กราฟ"],
+  ["sec-plan", "แผนสั่งซื้อ"],
+  ["sec-analysis", "วิเคราะห์"],
+  ["sec-fields", "ข้อมูลทั้งหมด"],
+  ["sec-history", "ประวัติแก้ไข"],
+];
 
 // Theme variables, not hex: the chart then follows whichever theme is active (SVG attributes and
 // inline styles both resolve var() at paint time).
@@ -116,9 +142,9 @@ function PoDueDatesList({ rows }: { rows: PoDueDateRow[] }) {
 }
 
 const STATUS_DASHBOARD: Record<string, { label: string; color: string }> = {
-  DANGER: { label: "🔴 วิกฤต", color: "var(--danger)" },
-  WARN: { label: "🟡 ระวัง", color: "var(--warning)" },
-  OK: { label: "🟢 ปกติ", color: "var(--success)" },
+  DANGER: { label: "วิกฤต", color: "var(--danger)" },
+  WARN: { label: "ระวัง", color: "var(--warning)" },
+  OK: { label: "ปกติ", color: "var(--success)" },
 };
 
 const DEFAULT_WIDTH = 520;
@@ -185,8 +211,8 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
   if (collapsed) {
     return (
       <aside ref={panelRef} className="detail-panel detail-panel-collapsed">
-        <button type="button" className="detail-panel-toggle" onClick={() => setCollapsed(false)} title="ขยาย">
-          ◀
+        <button type="button" className="detail-panel-toggle" onClick={() => setCollapsed(false)} title="ขยาย" aria-label="ขยายแผงรายละเอียด">
+          <ChevronsLeft size={16} strokeWidth={1.8} />
         </button>
       </aside>
     );
@@ -197,16 +223,37 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
       <div className="detail-panel-resizer" onMouseDown={onResizeMouseDown} />
       <div className="detail-panel-scroll">
       <div className="detail-panel-header">
-        <h2>{item?.itemNoRaw ?? "..."}</h2>
+        <div className="dph-main">
+          <div className="dph-row">
+            <h2>{item?.itemNoRaw ?? "..."}</h2>
+            {item && <StatusBadge status={item.calcStatus} />}
+            {item?.class && <span className="dph-pill">{item.class}</span>}
+            {item?.category && <span className="dph-pill">{item.category}</span>}
+          </div>
+          {item?.description && <div className="dph-desc">{item.description}</div>}
+        </div>
         <div className="detail-panel-header-actions">
-          <button type="button" onClick={() => setCollapsed(true)} title="หุบ">
-            ▶
+          <button type="button" className="icon-only" onClick={() => setCollapsed(true)} title="หุบแผง" aria-label="หุบแผง">
+            <ChevronsRight size={16} strokeWidth={1.8} />
           </button>
-          <button type="button" onClick={onClose}>
-            Close
+          <button type="button" className="icon-only" onClick={onClose} title="ปิด" aria-label="ปิด">
+            <X size={16} strokeWidth={1.8} />
           </button>
         </div>
       </div>
+      {item && (
+        <nav className="dp-jump" aria-label="ไปยังส่วน">
+          {SECTIONS.map(([id, label]) => (
+            <button
+              type="button"
+              key={id}
+              onClick={() => panelRef.current?.querySelector(`#${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
+      )}
 
       {isLoading && <p>Loading...</p>}
 
@@ -268,7 +315,7 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
 
         return (
           <div className="detail-panel-body">
-            <h1 className="detail-title">{item.description}</h1>
+            <span id="sec-overview" className="dp-anchor" />
             {item.description2 &&
               (() => {
                 const rep = splitReplacement(item.description2);
@@ -299,18 +346,10 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
                   color: "var(--warning)",
                 }}
               >
-                ⚠️ รายการนี้ไม่พบในไฟล์ import ล่าสุด — ตัวเลข Stock/คาดการณ์ด้านล่างอาจไม่เป็นปัจจุบัน
+                <AlertTriangle size={14} strokeWidth={2} style={{ verticalAlign: "-2px" }} aria-hidden /> รายการนี้ไม่พบในไฟล์ import ล่าสุด — ตัวเลข Stock/คาดการณ์ด้านล่างอาจไม่เป็นปัจจุบัน
               </div>
             )}
             <div className="detail-chips">
-              <span className="chip">
-                <span className="chip-label">รหัส</span>
-                <span className="chip-value" style={{ color: "var(--accent2)" }}>{item.itemNoRaw}</span>
-              </span>
-              <span className="chip">
-                <span className="chip-label">ประเภท</span>
-                <span className="chip-value" style={{ color: "var(--text-muted2)" }}>{item.category ?? "—"}</span>
-              </span>
               <span className="chip">
                 <span className="chip-label">Lead</span>
                 <span className="chip-value" style={{ color: "var(--warning)" }}>
@@ -335,7 +374,7 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
 
             <div className="detail-kpis">
               <div className="kpi">
-                <span className="kpi-label">PO N0</span>
+                <span className="kpi-label"><Truck size={13} strokeWidth={2} aria-hidden /> PO N0</span>
                 <span className="kpi-value" style={{ color: "var(--accent2)" }}>{fmtN(item.poQty, 0)}</span>
                 {hasPoDueDates ? (
                   <PoDueDatesList key={item.id} rows={item.poDueDates} />
@@ -344,12 +383,12 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
                 )}
               </div>
               <div className="kpi">
-                <span className="kpi-label">Stock N0</span>
+                <span className="kpi-label"><Warehouse size={13} strokeWidth={2} aria-hidden /> Stock N0</span>
                 <span className="kpi-value" style={{ color: "var(--accent)" }}>{fmtN(item.stockQty, 0)}</span>
                 <span className="kpi-sub">สต็อกที่สาขาใหญ่</span>
               </div>
               <div className="kpi">
-                <span className="kpi-label">Sale Order</span>
+                <span className="kpi-label"><ShoppingBag size={13} strokeWidth={2} aria-hidden /> Sale Order</span>
                 <span className="kpi-value" style={{ color: "var(--warning)" }}>
                   {fmtN(item.backorderQty, 0)}
                 </span>
@@ -357,7 +396,7 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
               </div>
               <div className="kpi">
                 <span className="kpi-label">
-                  AVG/M
+                  <TrendingUp size={13} strokeWidth={2} aria-hidden /> AVG/M
                   {item.avgMonth6 != null && (
                     <span style={{ color: "var(--accent2)" }} title="ค่าเฉลี่ย 6 เดือน — ใช้คำนวณ NEXT-0..5">
                       {" "}
@@ -369,12 +408,12 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
                 <span className="kpi-sub">Lead Time: {item.leadTimeDays ?? "—"} วัน</span>
               </div>
               <div className="kpi">
-                <span className="kpi-label">Sum MIN ✦</span>
+                <span className="kpi-label"><Target size={13} strokeWidth={2} aria-hidden /> Sum MIN</span>
                 <span className="kpi-value" style={{ color: "var(--accent)" }}>{fmt(item.sumMin, 0)}</span>
                 <span className="kpi-sub">Old MIN: {fmt(item.oldMin, 0)}</span>
               </div>
               <div className="kpi">
-                <span className="kpi-label">สถานะ</span>
+                <span className="kpi-label"><Activity size={13} strokeWidth={2} aria-hidden /> สถานะ</span>
                 <span
                   className="kpi-value"
                   style={{
@@ -388,6 +427,29 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
               </div>
             </div>
 
+            <section className="pab-strip" aria-label="Stock คาดการณ์ NEXT-0..5">
+              <div className="pab-head">
+                <span>Stock คาดการณ์รายเดือน (NEXT)</span>
+                <span className="pab-min">Sum MIN {fmt(item.sumMin, 0)}</span>
+              </div>
+              <div className="pab-grid">
+                {a.next.map((v, i) => {
+                  const tone = nextCellTone(v, item.sumMin);
+                  const first = i === a.triggerMonth;
+                  return (
+                    <div key={i} className={`pab-cell tone-${tone}${first ? " first" : ""}`} title={first ? "เดือนแรกที่ต่ำกว่า Sum MIN" : undefined}>
+                      <span className="pab-label">
+                        NEXT-{i} {thaiMonthLabel(i)}
+                      </span>
+                      <span className="pab-value">{fmtN(v, 1)}</span>
+                      {first && <span className="pab-flag">ขาดเดือนแรก</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+
+            <span id="sec-charts" className="dp-anchor" />
             <div className="detail-charts-grid">
               <section className="detail-chart-card">
                 <h3>ยอดขาย 13 เดือน</h3>
@@ -511,8 +573,11 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
               </section>
             </div>
 
+            <span id="sec-plan" className="dp-anchor" />
             <section className="plan-card">
-              <h3 className="plan-card-title">🤖 แผนการสั่งซื้อที่แนะนำ</h3>
+              <h3 className="plan-card-title">
+                <ClipboardCheck size={16} strokeWidth={2} aria-hidden /> แผนการสั่งซื้อที่แนะนำ
+              </h3>
 
               {a.triggerMonth >= 0 ? (
                 <>
@@ -574,7 +639,7 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
                     })}
                   </div>
                   <p className="plan-summary">
-                    🏁 ต้องสั่งวันที่:{" "}
+                    <Flag size={13} strokeWidth={2} style={{ verticalAlign: "-2px" }} aria-hidden /> ต้องสั่งวันที่:{" "}
                     <b className={`tone-${a.urgency.tone}`}>
                       {item.mustOrderByDate ? thaiDateShort(new Date(item.mustOrderByDate)) : "-"}
                     </b>{" "}
@@ -591,7 +656,9 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
                   </div>
                 </>
               ) : (
-                <p className="plan-ok">✅ สถานะปกติ — ไม่มีความจำเป็นต้องสั่งซื้อในช่วงเดือนนี้ถึง 5 เดือนข้างหน้า</p>
+                <p className="plan-ok">
+                  <CheckCircle2 size={15} strokeWidth={2} style={{ verticalAlign: "-3px" }} aria-hidden /> สถานะปกติ — ไม่มีความจำเป็นต้องสั่งซื้อในช่วงเดือนนี้ถึง 5 เดือนข้างหน้า
+                </p>
               )}
 
               {suggestions.length > 0 && (
@@ -607,8 +674,11 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
               )}
             </section>
 
+            <span id="sec-analysis" className="dp-anchor" />
             <section className="deep-analysis-card">
-              <h3>🧠 วิเคราะห์แนวโน้มและเหตุผลการสั่งซื้อโดยละเอียด</h3>
+              <h3>
+                <BrainCircuit size={16} strokeWidth={2} style={{ verticalAlign: "-3px" }} aria-hidden /> วิเคราะห์แนวโน้มและเหตุผลการสั่งซื้อโดยละเอียด
+              </h3>
               {narrative.map((sec) => (
                 <div className="narrative-section" key={sec.title}>
                   <h4>{sec.title}</h4>
@@ -641,6 +711,7 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
               ))}
             </section>
 
+            <span id="sec-fields" className="dp-anchor" />
             <section className="field-grid-section">
               <h3>ข้อมูลอ้างอิงครบทุกช่อง</h3>
               <div className="field-grid">
@@ -653,6 +724,7 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
               </div>
             </section>
 
+            <span id="sec-history" className="dp-anchor" />
             <section>
               <h3>Recent edits</h3>
               {history && history.length === 0 && <p>No edits recorded yet.</p>}

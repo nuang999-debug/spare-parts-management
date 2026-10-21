@@ -599,6 +599,7 @@ select:focus {
 
 @media print {
   .app-nav,
+  .side-nav,
   .tabs-bar,
   .detail-panel {
     display: none !important;
@@ -1093,7 +1094,7 @@ select:focus {
   font-family: var(--font-mono);
 }
 
-.items-table td:nth-child(2) {
+.items-table-frozen td:nth-child(2) {
   font-family: var(--font-sans);
   font-weight: 600;
 }

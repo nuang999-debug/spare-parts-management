@@ -12,6 +12,7 @@ import Users from "./pages/admin/Users";
 import LoginHistory from "./pages/audit/LoginHistory";
 import EditHistory from "./pages/audit/EditHistory";
 import "./App.css";
+import "./redesign.css";
 
 const queryClient = new QueryClient();
 

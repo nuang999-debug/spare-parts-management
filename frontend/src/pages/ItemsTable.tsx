@@ -20,7 +20,8 @@ import { StatusBadge, TrendIndicator } from "../components/StatusBadge";
 import ItemDetailPanel from "../components/ItemDetailPanel";
 import ErrorBoundary from "../components/ErrorBoundary";
 import PrQtyCell from "../components/PrQtyCell";
-import KpiBar from "../components/KpiBar";
+import KpiBar, { type KpiFilter } from "../components/KpiBar";
+import { AlertOctagon, Download, Eye, EyeOff, Filter, MoreHorizontal, RefreshCw, Trash2, X } from "lucide-react";
 import { thaiMonthLabel } from "../lib/thaiMonths";
 import { nextCellTone } from "../lib/analysis";
 import { provisionLongLabel, provisionMonths, provisionShortLabel, provisionTone } from "../lib/provision";
@@ -106,7 +107,24 @@ const columnHelper = createColumnHelper<ItemListRow>();
 /** These two columns render in a separate, non-horizontally-scrolling "frozen" table on the left,
  * so รหัส/ชื่ออะไหล่ stay visible while the rest of the table scrolls — avoids position:sticky
  * on table cells entirely, since that combination is unreliable across browsers/rendering engines. */
-const FROZEN_COLUMN_IDS = new Set(["itemNoRaw", "description"]);
+const FROZEN_COLUMN_IDS = new Set(["itemNoRaw", "description", "calcStatus"]);
+
+/** First NEXT month whose projected stock falls below Sum MIN ("time till shortage" in MRP terms),
+ *  or null when NEXT-0..5 all stay at or above it (or the item has no Sum MIN). */
+function shortageMonth(row: ItemListRow): number | null {
+  const min = row.sumMin ?? 0;
+  if (min <= 0) return null;
+  const next = [row.next0, row.next1, row.next2, row.next3, row.next4, row.next5];
+  const i = next.findIndex((v) => v != null && v < min);
+  return i < 0 ? null : i;
+}
+
+const SHORTAGE_NONE = "NONE";
+const shortageFilter: FilterFn<ItemListRow> = (row, columnId, filterValue) => {
+  if (filterValue === "" || filterValue === undefined || filterValue === null) return true;
+  const v = row.getValue<number | null>(columnId);
+  return filterValue === SHORTAGE_NONE ? v == null : v === Number(filterValue);
+};
 
 const historyColumns = Array.from({ length: 6 }, (_, i) =>
   columnHelper.accessor((row) => row.usageHistory[i]?.qty ?? null, {
@@ -169,6 +187,39 @@ const columns = [
     size: 220,
     filterFn: descriptionSearchFilter,
     meta: { filterType: "text", filterTitle: "ค้นหาจากชื่อ และ Description 2" },
+  }),
+  columnHelper.accessor("calcStatus", {
+    header: "สถานะ",
+    size: 70,
+    filterFn: "equalsString",
+    meta: {
+      filterType: "select",
+      selectOptions: ["DANGER", "WARN", "OK"],
+      selectLabel: (v) => ({ DANGER: "วิกฤต", WARN: "ระวัง", OK: "ปกติ" })[v] ?? v,
+    },
+    cell: (info) => <StatusBadge status={info.getValue()} />,
+  }),
+  columnHelper.accessor((row) => shortageMonth(row), {
+    id: "shortage",
+    header: "ขาดเดือน",
+    size: 74,
+    filterFn: shortageFilter,
+    sortUndefined: "last",
+    meta: {
+      filterType: "select",
+      selectOptions: ["0", "1", "2", "3", "4", "5", SHORTAGE_NONE],
+      selectLabel: (v) => (v === SHORTAGE_NONE ? "ไม่ขาด" : `NEXT-${v} ${thaiMonthLabel(Number(v))}`),
+      filterTitle: "เดือนแรกที่ NEXT ต่ำกว่า Sum MIN",
+    },
+    cell: (info) => {
+      const v = info.getValue();
+      if (v == null) return <span className="shortage-none">—</span>;
+      return (
+        <span className={`shortage-cell ${v === 0 ? "now" : v === 1 ? "soon" : "later"}`} title={`NEXT-${v} ต่ำกว่า Sum MIN`}>
+          {thaiMonthLabel(v)}
+        </span>
+      );
+    },
   }),
   columnHelper.accessor("class", {
     header: "CLASS",
@@ -286,13 +337,6 @@ const columns = [
   nextColumn(3),
   nextColumn(4),
   nextColumn(5),
-  columnHelper.accessor("calcStatus", {
-    header: "สถานะ",
-    size: 62,
-    filterFn: "equalsString",
-    meta: { filterType: "select", selectOptions: ["OK", "WARN", "DANGER"] },
-    cell: (info) => <StatusBadge status={info.getValue()} />,
-  }),
 ];
 
 function FilterCell({ column, items }: { column: Column<ItemListRow, unknown>; items: ItemListRow[] }) {
@@ -303,7 +347,7 @@ function FilterCell({ column, items }: { column: Column<ItemListRow, unknown>; i
     return (
       <input
         type="text"
-        placeholder="🔍"
+        placeholder="ค้นหา"
         title={meta.filterTitle}
         value={filterValue}
         onChange={(e) => column.setFilterValue(e.target.value || undefined)}
@@ -391,6 +435,24 @@ export default function ItemsTable({
   const [alertOnly, setAlertOnly] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [activeCell, setActiveCell] = useState<{ rowIndex: number; colId: string } | null>(null);
+  const [moreOpen, setMoreOpen] = useState(false);
+
+  const statusFilter = columnFilters.find((f) => f.id === "calcStatus")?.value;
+  const prFilter = columnFilters.find((f) => f.id === "prQtyCurrent")?.value;
+  const kpiActive: KpiFilter =
+    statusFilter === "DANGER" ? "DANGER" : statusFilter === "WARN" ? "WARN" : String(prFilter ?? "") === "1" ? "PR" : null;
+  function selectKpi(f: KpiFilter) {
+    setColumnFilters((prev) => {
+      const rest = prev.filter((x) => x.id !== "calcStatus" && x.id !== "prQtyCurrent");
+      if (f === "DANGER" || f === "WARN") return [...rest, { id: "calcStatus", value: f }];
+      if (f === "PR") return [...rest, { id: "prQtyCurrent", value: "1" }];
+      return rest;
+    });
+  }
+  const lastImport = useMemo(() => {
+    const t = (items ?? []).reduce((m, d) => (d.lastImportedAt && d.lastImportedAt > m ? d.lastImportedAt : m), "");
+    return t ? new Date(t) : null;
+  }, [items]);
 
   function rowClassName(item: ItemListRow): string {
     return item.id === selectedItemId ? "row-selected" : "";
@@ -662,7 +724,7 @@ export default function ItemsTable({
         ) : (
           <>
             {flexRender(header.column.columnDef.header, header.getContext())}
-            {{ asc: " ▲", desc: " ▼" }[header.column.getIsSorted() as string] ?? ""}
+            <span className="sort-ind">{{ asc: "▲", desc: "▼" }[header.column.getIsSorted() as string] ?? ""}</span>
           </>
         )}
         <ResizeHandle header={header} />
@@ -696,21 +758,66 @@ export default function ItemsTable({
 
   return (
     <div className="items-page">
-      <KpiBar items={items ?? []} />
+      <KpiBar items={items ?? []} active={kpiActive} onSelect={selectKpi} />
       <div className="items-toolbar">
         <span className="items-count">
+          <b>{rows.length.toLocaleString()}</b>
           {showAll
-            ? `แสดง ${rows.length} / ${items?.length ?? 0} รายการ`
+            ? ` / ${(items?.length ?? 0).toLocaleString()} รายการ (รวมที่ไม่มี Sum MIN)`
             : includesZeroBc
-              ? `แสดง ${rows.length} รายการ (รวมรายการที่ไม่มี Sum MIN เพราะมีการค้นหา/กรอง) จากทั้งหมด ${items?.length ?? 0} รายการ`
-              : `แสดง ${rows.length} รายการ (มี Sum MIN) จากทั้งหมด ${items?.length ?? 0} รายการ`}
+              ? ` รายการ (รวมที่ไม่มี Sum MIN เพราะมีการค้นหา/กรอง) จาก ${(items?.length ?? 0).toLocaleString()}`
+              : ` รายการ (มี Sum MIN) จาก ${(items?.length ?? 0).toLocaleString()}`}
         </span>
+        {lastImport && (
+          <span className="data-fresh" title="วันที่นำเข้าไฟล์ Items ล่าสุด">
+            <RefreshCw size={12} strokeWidth={2} aria-hidden /> ข้อมูล{" "}
+            {lastImport.toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "2-digit" })}
+          </span>
+        )}
+        {(columnFilters.length > 0 || alertOnly) && (
+          <div className="filter-chips">
+            {alertOnly && (
+              <button type="button" className="fchip" onClick={() => setAlertOnly(false)} title="เอาตัวกรองนี้ออก">
+                เฉพาะต้องสั่ง <X size={12} aria-hidden />
+              </button>
+            )}
+            {columnFilters.map((f) => {
+              const col = table.getColumn(f.id);
+              const meta = col?.columnDef.meta;
+              const label = typeof col?.columnDef.header === "string" ? col.columnDef.header : f.id;
+              const raw = String(f.value);
+              const val = meta?.filterType === "gte" ? `≥ ${raw}` : meta?.selectLabel ? meta.selectLabel(raw) : raw;
+              return (
+                <button
+                  type="button"
+                  key={f.id}
+                  className="fchip"
+                  onClick={() => setColumnFilters((prev) => prev.filter((x) => x.id !== f.id))}
+                  title="เอาตัวกรองนี้ออก"
+                >
+                  {label}: {val} <X size={12} aria-hidden />
+                </button>
+              );
+            })}
+          </div>
+        )}
         <div className="items-toolbar-actions">
-          <button type="button" className={alertOnly ? "on" : ""} onClick={() => setAlertOnly((v) => !v)}>
-            🚨 เฉพาะต้องสั่ง
+          <button
+            type="button"
+            className={alertOnly ? "on" : ""}
+            onClick={() => setAlertOnly((v) => !v)}
+            title="แสดงเฉพาะรายการวิกฤตและระวัง"
+          >
+            <AlertOctagon size={15} strokeWidth={1.8} aria-hidden /> เฉพาะต้องสั่ง
           </button>
-          <button type="button" onClick={() => setShowAll((v) => !v)}>
-            {showAll ? `ซ่อนรายการที่ไม่มี Sum MIN (${zeroSumMinCount} รายการ)` : "แสดงทั้งหมด รวมรายการที่ไม่มี Sum MIN"}
+          <button
+            type="button"
+            className={showAll ? "on-neutral" : ""}
+            onClick={() => setShowAll((v) => !v)}
+            title={showAll ? `ซ่อนรายการที่ไม่มี Sum MIN (${zeroSumMinCount} รายการ)` : "แสดงทั้งหมด รวมรายการที่ไม่มี Sum MIN"}
+          >
+            {showAll ? <EyeOff size={15} strokeWidth={1.8} aria-hidden /> : <Eye size={15} strokeWidth={1.8} aria-hidden />}
+            {showAll ? "ซ่อนที่ไม่มี MIN" : "รวมที่ไม่มี MIN"}
           </button>
           <button
             type="button"
@@ -719,34 +826,58 @@ export default function ItemsTable({
               setAlertOnly(false);
               setShowAll(false);
             }}
+            title="ล้างตัวกรองทั้งหมด"
           >
-            ✕ ล้าง Filter
+            <Filter size={15} strokeWidth={1.8} aria-hidden /> ล้าง Filter
           </button>
-          <button type="button" onClick={() => exportCSV(rows.map((r) => r.original))}>
-            ⬇ Export CSV
+          <button type="button" onClick={() => exportCSV(rows.map((r) => r.original))} title="ส่งออกรายการที่แสดงอยู่เป็น CSV">
+            <Download size={15} strokeWidth={1.8} aria-hidden /> Export CSV
           </button>
           {user?.role === "ADMIN" && (
-            <button
-              type="button"
-              disabled={clearAllPrMutation.isPending}
-              onClick={async () => {
-                if (!window.confirm("ต้องการล้างค่า PR QTY ของทุกรายการทั้งหมดใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้")) return;
-                // A PR cell mid-edit (typed but not yet saved, or already saving) races the bulk
-                // clear below over the network: if that individual PATCH commits AFTER this
-                // request's DB write, the row keeps its value — looks exactly like "clicked clear
-                // all, but that one row didn't clear." Blurring flushes any focused cell's edit
-                // immediately (its onBlur handler saves it right away instead of waiting out its
-                // own debounce — at most one cell can have unsaved input at a time, since moving
-                // focus to type anywhere else always blurs it first), and waiting for the shared
-                // mutation cache to drain then guarantees the bulk clear is always the LAST write
-                // for every row, including one that's since scrolled out of view.
-                (document.activeElement as HTMLElement | null)?.blur?.();
-                await waitForPrMutationsToSettle(queryClient);
-                clearAllPrMutation.mutate();
+            <div
+              className="more-wrap"
+              onBlur={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget as Node)) setMoreOpen(false);
               }}
             >
-              🗑 ล้าง PR ทั้งหมด
-            </button>
+              <button
+                type="button"
+                className="icon-only"
+                aria-label="เมนูเพิ่มเติม"
+                aria-expanded={moreOpen}
+                onClick={() => setMoreOpen((v) => !v)}
+              >
+                <MoreHorizontal size={16} strokeWidth={1.8} />
+              </button>
+              {moreOpen && (
+                <div className="more-menu" role="menu">
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="danger"
+                    disabled={clearAllPrMutation.isPending}
+                    onClick={async () => {
+                      setMoreOpen(false);
+                      if (!window.confirm("ต้องการล้างค่า PR QTY ของทุกรายการทั้งหมดใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้")) return;
+                      // A PR cell mid-edit (typed but not yet saved, or already saving) races the bulk
+                      // clear below over the network: if that individual PATCH commits AFTER this
+                      // request's DB write, the row keeps its value — looks exactly like "clicked clear
+                      // all, but that one row didn't clear." Blurring flushes any focused cell's edit
+                      // immediately (its onBlur handler saves it right away instead of waiting out its
+                      // own debounce — at most one cell can have unsaved input at a time, since moving
+                      // focus to type anywhere else always blurs it first), and waiting for the shared
+                      // mutation cache to drain then guarantees the bulk clear is always the LAST write
+                      // for every row, including one that's since scrolled out of view.
+                      (document.activeElement as HTMLElement | null)?.blur?.();
+                      await waitForPrMutationsToSettle(queryClient);
+                      clearAllPrMutation.mutate();
+                    }}
+                  >
+                    <Trash2 size={15} strokeWidth={1.8} aria-hidden /> ล้าง PR ทั้งหมด
+                  </button>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
