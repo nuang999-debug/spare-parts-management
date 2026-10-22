@@ -794,3 +794,30 @@ button[type="button"].icon-btn.side-garden-toggle.on { color: var(--success); }
 @keyframes sg-zz { 0% { transform: translate(0, 0); opacity: 0; } 20% { opacity: 1; } 100% { transform: translate(8px, -16px); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .sg-scene * { animation: none !important; transition: none !important; } }
 @media print { .side-garden { display: none !important; } }
+
+/* night camp + seasonal layer */
+.side-garden .sg-scene { max-height: none; height: 100%; }
+.sg-star { animation: sg-tw 2.6s ease-in-out infinite; }
+.sg-star-b { animation-delay: -1.3s; }
+.sg-glow { fill: #FAC775; opacity: 0.28; }
+.sg-flame { transform-origin: 50% 100%; animation: sg-flick 0.6s ease-in-out infinite; }
+.sg-firefly { fill: #FAC775; animation: sg-firefly 4s ease-in-out infinite; }
+.sg-lantern { animation: sg-rise 14s linear infinite; }
+.sg-snow { animation: sg-snow 9s linear infinite; }
+.sg-firework { transform-origin: center; animation: sg-burst 4.8s ease-out infinite; opacity: 0; }
+.sg-splash { animation: sg-splash 3.5s ease-in infinite; }
+.sg-shooting { opacity: 0; animation: sg-shoot 12s ease-out infinite; }
+.sg-sleep .sg-flame { animation: none; transform: scale(0.55); }
+.sg-sleep .sg-glow { opacity: 0.12; }
+.sg-sleep .sg-firefly, .sg-sleep .sg-lantern, .sg-sleep .sg-snow, .sg-sleep .sg-firework, .sg-sleep .sg-splash, .sg-sleep .sg-star { animation-play-state: paused; }
+@keyframes sg-tw { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
+@keyframes sg-flick { 0%, 100% { transform: scale(1, 1); } 30% { transform: scale(0.92, 1.15); } 60% { transform: scale(1.05, 0.9); } }
+@keyframes sg-firefly { 0% { transform: translate(0, 0); opacity: 0.2; } 50% { transform: translate(16px, -22px); opacity: 1; } 100% { transform: translate(-8px, -44px); opacity: 0.2; } }
+@keyframes sg-rise { 0% { transform: translate(0, 0); opacity: 0; } 8% { opacity: 1; } 50% { transform: translate(8px, -150px); } 100% { transform: translate(-6px, -300px); opacity: 0; } }
+@keyframes sg-snow { 0% { transform: translate(0, 0); opacity: 0; } 10% { opacity: 1; } 100% { transform: translate(10px, 340px); opacity: 0.6; } }
+@keyframes sg-burst { 0% { transform: scale(0.2); opacity: 0; } 8% { opacity: 1; } 30% { transform: scale(1.1); opacity: 0; } 100% { opacity: 0; } }
+@keyframes sg-splash { 0% { transform: translate(0, 0); opacity: 0; } 15% { opacity: 1; } 100% { transform: translate(-14px, 320px); opacity: 0; } }
+@keyframes sg-shoot { 0%, 85% { transform: translate(0, 0); opacity: 0; } 88% { opacity: 1; } 96% { transform: translate(-90px, 45px); opacity: 0; } 100% { opacity: 0; } }
+.nav-collapsed .side-garden .sg-scene { height: auto; }
+/* never let the scene (overflow: visible for the pop-out jump) spill over the menu links */
+.side-garden { overflow: hidden; }
