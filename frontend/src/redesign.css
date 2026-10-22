@@ -820,3 +820,10 @@ button[type="button"].icon-btn.side-garden-toggle.on { color: var(--success); }
 @keyframes sg-shoot { 0%, 85% { transform: translate(0, 0); opacity: 0; } 88% { opacity: 1; } 96% { transform: translate(-90px, 45px); opacity: 0; } 100% { opacity: 0; } }
 /* never let the scene (overflow: visible for the pop-out jump) spill over the menu links */
 .side-garden { overflow: hidden; }
+
+/* Chinese New Year: red lanterns swaying on a string, red envelopes and gold coins drifting down */
+.sg-cny-lantern { transform-origin: 50% 0; animation: sg-lantern-sway 3s ease-in-out infinite; }
+.sg-coin { animation: sg-coin-fall 9s linear infinite; }
+.sg-sleep .sg-cny-lantern, .sg-sleep .sg-coin { animation-play-state: paused; }
+@keyframes sg-lantern-sway { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
+@keyframes sg-coin-fall { 0% { transform: translate(0, 0) rotate(0); opacity: 0; } 10% { opacity: 1; } 100% { transform: translate(-8px, 330px) rotate(200deg); opacity: 0.4; } }

@@ -16,12 +16,39 @@ const EYE_R = { x: 57, y: 77 };
 /** The garden strip (designed on a 200x140 box) sits at the bottom of a taller 200x360 scene. */
 const GROUND_Y = 220;
 
-type Season = "loykrathong" | "newyear" | "songkran" | "plain";
+type Season = "chinesenewyear" | "loykrathong" | "newyear" | "songkran" | "plain";
+const SEASONS: Season[] = ["chinesenewyear", "loykrathong", "newyear", "songkran", "plain"];
+
+/** Chinese New Year's day (lunar, so it moves every year), as [month, day]. */
+const CHINESE_NEW_YEAR: Record<number, [number, number]> = {
+  2026: [2, 17],
+  2027: [2, 6],
+  2028: [1, 26],
+  2029: [2, 13],
+  2030: [2, 3],
+  2031: [1, 23],
+  2032: [2, 11],
+  2033: [1, 31],
+  2034: [2, 19],
+  2035: [2, 8],
+  2036: [1, 28],
+};
+
+/** From a week before Chinese New Year to ten days after it (when the year is in the table). */
+function isChineseNewYear(d: Date): boolean {
+  const cny = CHINESE_NEW_YEAR[d.getFullYear()];
+  if (!cny) return false;
+  const day = new Date(d.getFullYear(), cny[0] - 1, cny[1]).getTime();
+  const t = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const DAY = 864e5;
+  return t >= day - 7 * DAY && t <= day + 10 * DAY;
+}
 
 /** Which seasonal layer to show for a date. `?season=` in the URL overrides it (for previewing). */
 function seasonFor(d: Date): Season {
   const forced = new URLSearchParams(window.location.search).get("season");
-  if (forced === "loykrathong" || forced === "newyear" || forced === "songkran" || forced === "plain") return forced;
+  if (forced && (SEASONS as string[]).includes(forced)) return forced as Season;
+  if (isChineseNewYear(d)) return "chinesenewyear";
   const m = d.getMonth() + 1;
   const day = d.getDate();
   if ((m === 10 && day >= 15) || m === 11) return "loykrathong";
@@ -31,6 +58,40 @@ function seasonFor(d: Date): Season {
 }
 
 function SeasonLayer({ season }: { season: Season }) {
+  if (season === "chinesenewyear") {
+    return (
+      <g className="sg-season">
+        <path d="M-4 18 Q100 44 204 18" stroke="#A32D2D" strokeWidth="1.4" fill="none" />
+        {[
+          [34, 26, 0],
+          [100, 32, -1],
+          [166, 26, -2],
+        ].map(([x, y, delay], i) => (
+          <g key={i} className="sg-cny-lantern" style={{ animationDelay: `${delay}s` }}>
+            <g transform={`translate(${x} ${y})`}>
+              <line x1="0" y1="0" x2="0" y2="6" stroke="#A32D2D" />
+              <ellipse cx="0" cy="16" rx="12" ry="11" className="sg-glow" />
+              <rect x="-6" y="5" width="12" height="3" rx="1" fill="#BA7517" />
+              <ellipse cx="0" cy="16" rx="10" ry="9" fill="#E24B4A" stroke="#A32D2D" />
+              <path d="M-4 8 q-2 8 0 16 M4 8 q2 8 0 16 M0 7 v18" stroke="#A32D2D" strokeWidth=".8" fill="none" />
+              <rect x="-6" y="24" width="12" height="3" rx="1" fill="#BA7517" />
+              <path d="M-2 27 v8 M0 27 v10 M2 27 v8" stroke="#EF9F27" strokeWidth="1" />
+            </g>
+          </g>
+        ))}
+        {[24, 62, 118, 150, 184].map((x, i) =>
+          i % 2 ? (
+            <circle key={x} className="sg-coin" cx={x} cy="-8" r="3" fill="#FAC775" stroke="#BA7517" style={{ animationDelay: `${-i * 1.7}s` }} />
+          ) : (
+            <g key={x} className="sg-coin" style={{ animationDelay: `${-i * 1.7}s` }}>
+              <rect x={x - 4} y="-14" width="8" height="11" rx="1.2" fill="#E24B4A" stroke="#A32D2D" />
+              <rect x={x - 2} y="-10" width="4" height="3" rx=".6" fill="#FAC775" />
+            </g>
+          )
+        )}
+      </g>
+    );
+  }
   if (season === "loykrathong") {
     return (
       <g className="sg-season">
@@ -204,8 +265,12 @@ export default function SideGarden({ collapsed }: { collapsed: boolean }) {
         ].map(([x, y, r], i) => (
           <circle key={i} className={`sg-star${i % 2 ? " sg-star-b" : ""}`} cx={x} cy={y} r={r} fill="#fff" />
         ))}
-        <circle cx="158" cy="78" r="15" fill="#FAEEDA" />
-        <circle cx="164" cy="73" r="13" fill="#10284a" />
+        {/* crescent cut with a mask, so it reads as a moon on any sky colour (light themes included) */}
+        <mask id="sg-moon-cut">
+          <rect x="140" y="60" width="40" height="40" fill="#fff" />
+          <circle cx="164" cy="73" r="13" fill="#000" />
+        </mask>
+        <circle cx="158" cy="78" r="15" fill="#FAEEDA" mask="url(#sg-moon-cut)" />
         <SeasonLayer season={season} />
         <path d="M0 340 L0 300 L36 262 L64 292 L100 246 L140 290 L170 266 L200 296 L200 340 Z" fill="#1e293b" />
         <path d="M100 246 l-9 11 l9 -4 l8 4 Z M36 262 l-6 7 l6 -2 l5 2 Z" fill="#cbd5e1" opacity=".6" />
