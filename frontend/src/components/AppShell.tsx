@@ -10,14 +10,25 @@ import {
   Palette,
   PanelLeftClose,
   PanelLeftOpen,
+  Sprout,
   Users,
   Wrench,
   type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
 import { THEMES, useTheme, type Theme } from "../lib/useTheme";
+import SideGarden from "./SideGarden";
 
 const NAV_KEY = "spareparts_nav_collapsed";
+const GARDEN_KEY = "spareparts_garden_off";
+
+function readGardenOn(): boolean {
+  try {
+    return localStorage.getItem(GARDEN_KEY) !== "1";
+  } catch {
+    return true;
+  }
+}
 /** Below this width the full menu would squeeze the table (especially with the detail panel
  *  open), so it starts collapsed to icons; the user can still open it for the moment. */
 const NARROW_QUERY = "(max-width: 1279px)";
@@ -58,6 +69,7 @@ export default function AppShell() {
   const [narrowOpen, setNarrowOpen] = useState(false);
   useEffect(() => setNarrowOpen(false), [narrow]);
   const isCollapsed = narrow ? !narrowOpen : collapsed;
+  const [gardenOn, setGardenOn] = useState(readGardenOn);
 
   if (user?.mustChangePassword) {
     return <Navigate to="/change-password" replace />;
@@ -75,6 +87,17 @@ export default function AppShell() {
         /* per-viewer convenience only */
       }
       return !c;
+    });
+  }
+
+  function toggleGarden() {
+    setGardenOn((on) => {
+      try {
+        localStorage.setItem(GARDEN_KEY, on ? "1" : "0");
+      } catch {
+        /* per-viewer convenience only */
+      }
+      return !on;
     });
   }
 
@@ -109,6 +132,8 @@ export default function AppShell() {
           )}
         </nav>
 
+        {gardenOn && <SideGarden collapsed={isCollapsed} />}
+
         <div className="side-bottom">
           <label className="side-theme" title="เลือกธีม">
             <Palette size={18} strokeWidth={1.8} aria-hidden />
@@ -129,15 +154,27 @@ export default function AppShell() {
               <LogOut size={16} strokeWidth={1.8} />
             </button>
           </div>
-          <button
-            type="button"
-            className="icon-btn side-collapse"
-            onClick={toggleCollapsed}
-            title={isCollapsed ? "ขยายเมนู" : "ย่อเมนู"}
-            aria-label={isCollapsed ? "ขยายเมนู" : "ย่อเมนู"}
-          >
-            {isCollapsed ? <PanelLeftOpen size={16} strokeWidth={1.8} /> : <PanelLeftClose size={16} strokeWidth={1.8} />}
-          </button>
+          <div className="side-tools">
+            <button
+              type="button"
+              className={`icon-btn side-garden-toggle${gardenOn ? " on" : ""}`}
+              onClick={toggleGarden}
+              title={gardenOn ? "ซ่อนสวนน้องแมว" : "แสดงสวนน้องแมว"}
+              aria-label={gardenOn ? "ซ่อนสวนน้องแมว" : "แสดงสวนน้องแมว"}
+              aria-pressed={gardenOn}
+            >
+              <Sprout size={16} strokeWidth={1.8} />
+            </button>
+            <button
+              type="button"
+              className="icon-btn side-collapse"
+              onClick={toggleCollapsed}
+              title={isCollapsed ? "ขยายเมนู" : "ย่อเมนู"}
+              aria-label={isCollapsed ? "ขยายเมนู" : "ย่อเมนู"}
+            >
+              {isCollapsed ? <PanelLeftOpen size={16} strokeWidth={1.8} /> : <PanelLeftClose size={16} strokeWidth={1.8} />}
+            </button>
+          </div>
         </div>
       </aside>
       <main className="app-content">

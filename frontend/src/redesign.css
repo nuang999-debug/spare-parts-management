@@ -750,3 +750,47 @@ button[type="button"].fchip:hover:not(:disabled) {
 .kc .ksub {
   display: block;
 }
+
+/* ---------- side menu garden (SideGarden.tsx) ---------- */
+.side-links { flex: 0 1 auto; }
+.side-bottom { margin-top: auto; }
+.side-tools { display: flex; justify-content: flex-end; gap: 2px; }
+.nav-collapsed .side-tools { flex-direction: column; align-items: center; }
+.side-tools .side-collapse { align-self: auto; }
+button[type="button"].icon-btn.side-garden-toggle.on { color: var(--success); }
+.side-garden { flex: 1; min-height: 0; position: relative; pointer-events: none; container-type: size; }
+.sg-scene { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: auto; max-height: 100%; overflow: visible; }
+@container (max-height: 70px) { .sg-scene { display: none; } }
+.sg-scene * { transform-box: fill-box; }
+.sg-cloud { fill: color-mix(in srgb, var(--accent2) 14%, transparent); }
+.sg-zz { fill: var(--accent2); opacity: 0; }
+.sg-closed { display: none; }
+.sg-flower { transform-origin: 50% 100%; animation: sg-sway 3s ease-in-out infinite; }
+.sg-flower-b { animation-delay: -1.5s; }
+.sg-butterfly { animation: sg-fly 10s ease-in-out infinite; }
+.sg-wing { transform-origin: 50% 50%; animation: sg-flap 0.25s ease-in-out infinite alternate; }
+.sg-cat { transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1.2); }
+.sg-cat.sg-pop { transform: translateY(-16px); }
+.sg-arm { transform-origin: 20% 90%; opacity: 0; transition: opacity 0.2s; }
+.sg-cat.sg-pop .sg-arm { opacity: 1; animation: sg-wave 0.5s ease-in-out 3; }
+.sg-ear { transform-origin: 50% 100%; animation: sg-twitch 6s infinite; }
+.sg-rear { transform-origin: 50% 100%; animation: sg-twitch 4s infinite; }
+.sg-rabbit { animation: sg-hop 7s ease-in-out infinite; }
+.sg-rabbit.sg-pop { animation: sg-jump 0.5s ease-out 3; }
+.sg-sleep .sg-open { display: none; }
+.sg-sleep .sg-closed { display: inline; }
+.sg-sleep .sg-zz { animation: sg-zz 2.4s ease-out infinite; }
+.sg-sleep .sg-zz-b { animation-delay: 1.2s; }
+.sg-sleep .sg-rabbit { animation: none; }
+.sg-sleep .sg-cat { transform: translateY(5px); }
+.sg-sleep .sg-butterfly, .sg-sleep .sg-flower, .sg-sleep .sg-wing, .sg-sleep .sg-ear, .sg-sleep .sg-rear { animation-play-state: paused; }
+@keyframes sg-sway { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
+@keyframes sg-fly { 0% { transform: translate(20px, 22px); } 25% { transform: translate(90px, 8px); } 50% { transform: translate(170px, 26px); } 75% { transform: translate(110px, 40px); } 100% { transform: translate(20px, 22px); } }
+@keyframes sg-flap { to { transform: scaleX(0.3); } }
+@keyframes sg-wave { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-35deg); } }
+@keyframes sg-twitch { 0%, 90%, 100% { transform: rotate(0); } 93% { transform: rotate(-12deg); } 96% { transform: rotate(6deg); } }
+@keyframes sg-hop { 0%, 10% { transform: translate(0, 0); } 14% { transform: translate(8px, -12px); } 18% { transform: translate(16px, 0); } 22% { transform: translate(24px, -12px); } 26%, 55% { transform: translate(32px, 0); } 59% { transform: translate(24px, -12px); } 63% { transform: translate(16px, 0); } 67% { transform: translate(8px, -12px); } 71%, 100% { transform: translate(0, 0); } }
+@keyframes sg-jump { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-16px); } }
+@keyframes sg-zz { 0% { transform: translate(0, 0); opacity: 0; } 20% { opacity: 1; } 100% { transform: translate(8px, -16px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .sg-scene * { animation: none !important; transition: none !important; } }
+@media print { .side-garden { display: none !important; } }
