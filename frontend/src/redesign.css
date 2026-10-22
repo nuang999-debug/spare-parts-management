@@ -827,3 +827,21 @@ button[type="button"].icon-btn.side-garden-toggle.on { color: var(--success); }
 .sg-sleep .sg-cny-lantern, .sg-sleep .sg-coin { animation-play-state: paused; }
 @keyframes sg-lantern-sway { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
 @keyframes sg-coin-fall { 0% { transform: translate(0, 0) rotate(0); opacity: 0; } 10% { opacity: 1; } 100% { transform: translate(-8px, 330px) rotate(200deg); opacity: 0.4; } }
+
+/* Valentine, Mother's Day, Halloween, Santa, Songkran water gun */
+.sg-heart { animation: sg-rise 12s linear infinite; }
+.sg-jasmine { animation: sg-coin-fall 10s linear infinite; }
+.sg-bat { animation: sg-bat-fly 10s linear infinite; }
+.sg-bat-wing { transform-origin: 50% 50%; animation: sg-flap 0.3s ease-in-out infinite alternate; }
+.sg-pumpkin-face { fill: #FAEEDA; animation: sg-tw 1.6s ease-in-out infinite; }
+.sg-sleigh { animation: sg-sleigh 14s linear infinite; }
+.sg-stream { stroke-dasharray: 6 4; animation: sg-stream 0.5s linear infinite; }
+.sg-drop { animation: sg-drop 0.9s ease-out infinite; }
+.sg-drop-b { animation-delay: -0.45s; }
+.sg-sleep .sg-heart, .sg-sleep .sg-jasmine, .sg-sleep .sg-bat, .sg-sleep .sg-sleigh, .sg-sleep .sg-stream, .sg-sleep .sg-drop,
+.sg-sleep .sg-pumpkin-face { animation-play-state: paused; }
+.sg-sleep .sg-stream, .sg-sleep .sg-drop { opacity: 0; }
+@keyframes sg-bat-fly { 0% { transform: translate(-20px, 0); } 50% { transform: translate(110px, -24px); } 100% { transform: translate(230px, 6px); } }
+@keyframes sg-sleigh { 0% { transform: translate(230px, 20px); } 60% { transform: translate(-80px, -30px); } 100% { transform: translate(-80px, -30px); } }
+@keyframes sg-stream { to { stroke-dashoffset: -10; } }
+@keyframes sg-drop { 0% { transform: translate(0, 0); opacity: 1; } 100% { transform: translate(-5px, 8px); opacity: 0; } }

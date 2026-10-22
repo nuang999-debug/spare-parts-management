@@ -16,8 +16,16 @@ const EYE_R = { x: 57, y: 77 };
 /** The garden strip (designed on a 200x140 box) sits at the bottom of a taller 200x360 scene. */
 const GROUND_Y = 220;
 
-type Season = "chinesenewyear" | "loykrathong" | "newyear" | "songkran" | "plain";
-const SEASONS: Season[] = ["chinesenewyear", "loykrathong", "newyear", "songkran", "plain"];
+type Season =
+  | "chinesenewyear"
+  | "valentine"
+  | "songkran"
+  | "mothersday"
+  | "halloween"
+  | "loykrathong"
+  | "newyear"
+  | "plain";
+const SEASONS: Season[] = ["chinesenewyear", "valentine", "songkran", "mothersday", "halloween", "loykrathong", "newyear", "plain"];
 
 /** Chinese New Year's day (lunar, so it moves every year), as [month, day]. */
 const CHINESE_NEW_YEAR: Record<number, [number, number]> = {
@@ -48,9 +56,14 @@ function isChineseNewYear(d: Date): boolean {
 function seasonFor(d: Date): Season {
   const forced = new URLSearchParams(window.location.search).get("season");
   if (forced && (SEASONS as string[]).includes(forced)) return forced as Season;
-  if (isChineseNewYear(d)) return "chinesenewyear";
   const m = d.getMonth() + 1;
   const day = d.getDate();
+  // Valentine's own days win over Chinese New Year when the two overlap in February.
+  if (m === 2 && day >= 12 && day <= 14) return "valentine";
+  if (isChineseNewYear(d)) return "chinesenewyear";
+  if (m === 2 && day >= 8 && day <= 11) return "valentine";
+  if (m === 8 && day >= 5 && day <= 12) return "mothersday";
+  if (m === 10 && day >= 24) return "halloween";
   if ((m === 10 && day >= 15) || m === 11) return "loykrathong";
   if ((m === 12 && day >= 15) || (m === 1 && day <= 7)) return "newyear";
   if (m === 4 && day <= 20) return "songkran";
@@ -112,9 +125,86 @@ function SeasonLayer({ season }: { season: Season }) {
       </g>
     );
   }
+  if (season === "valentine") {
+    return (
+      <g className="sg-season">
+        {[
+          [26, 0, "#ED93B1"],
+          [70, -2.2, "#E24B4A"],
+          [112, -4.4, "#F4C0D1"],
+          [154, -6.6, "#E24B4A"],
+          [186, -8.8, "#ED93B1"],
+        ].map(([x, delay, c], i) => (
+          <g key={i} className="sg-heart" style={{ animationDelay: `${delay}s` }}>
+            <path
+              transform={`translate(${x} 300) scale(${i % 2 ? 0.8 : 1})`}
+              d="M0 4 C-7 -3 -14 4 0 13 C14 4 7 -3 0 4 Z"
+              fill={String(c)}
+            />
+          </g>
+        ))}
+      </g>
+    );
+  }
+  if (season === "mothersday") {
+    return (
+      <g className="sg-season">
+        <path d="M-4 16 Q100 40 204 16" stroke="#C0DD97" strokeWidth="1.2" fill="none" />
+        {Array.from({ length: 13 }, (_, i) => {
+          const x = i * 16 + 4;
+          const y = 16 + Math.sin((x / 200) * Math.PI) * 13;
+          return <circle key={i} cx={x} cy={y} r="3.2" fill="#FFFFFF" stroke="#D3D1C7" strokeWidth=".6" />;
+        })}
+        {[18, 54, 96, 138, 178].map((x, i) => (
+          <g key={x} className="sg-jasmine" style={{ animationDelay: `${-i * 1.6}s` }}>
+            <g transform={`translate(${x} -6)`}>
+              {[0, 72, 144, 216, 288].map((a) => (
+                <ellipse key={a} cx="0" cy="-3" rx="1.8" ry="3" fill="#FFFFFF" transform={`rotate(${a})`} />
+              ))}
+              <circle r="1.3" fill="#FAC775" />
+            </g>
+          </g>
+        ))}
+      </g>
+    );
+  }
+  if (season === "halloween") {
+    return (
+      <g className="sg-season">
+        {[0, -5].map((delay, i) => (
+          <g key={i} className="sg-bat" style={{ animationDelay: `${delay}s` }}>
+            <g transform={`translate(0 ${i ? 150 : 100})`}>
+              <g className="sg-bat-wing">
+                <path d="M0 0 q-6 -6 -14 -2 q4 2 4 6 q-4 0 -6 4 q8 -2 16 -8 Z" fill="#2C2C2A" />
+                <path d="M0 0 q6 -6 14 -2 q-4 2 -4 6 q4 0 6 4 q-8 -2 -16 -8 Z" fill="#2C2C2A" />
+              </g>
+              <circle cx="0" cy="1" r="3" fill="#2C2C2A" />
+            </g>
+          </g>
+        ))}
+      </g>
+    );
+  }
   if (season === "newyear") {
     return (
       <g className="sg-season">
+        <g className="sg-sleigh">
+          <g transform="translate(0 112)">
+            <path d="M18 8 q8 -6 16 0" stroke="#854F0B" strokeWidth="1.2" fill="none" />
+            <ellipse cx="44" cy="8" rx="8" ry="4" fill="#854F0B" />
+            <path d="M48 5 l3 -6 M50 5 l4 -4 M51 -1 l3 0" stroke="#5F3E1C" strokeWidth="1" />
+            <circle cx="52" cy="7" r="1.4" fill="#E24B4A" />
+            <path d="M38 11 v5 M48 11 v5" stroke="#854F0B" strokeWidth="1.2" />
+            <line x1="22" y1="8" x2="36" y2="8" stroke="#BA7517" strokeWidth=".8" />
+            <path d="M0 4 h20 q2 8 -6 10 h-12 q-6 -2 -4 -10 Z" fill="#E24B4A" stroke="#A32D2D" />
+            <path d="M-2 15 h22" stroke="#FAC775" strokeWidth="1.4" strokeLinecap="round" />
+            <circle cx="9" cy="-1" r="5" fill="#FAEEDA" />
+            <path d="M4 -2 q5 8 10 0" fill="#fff" />
+            <path d="M4 -3 l5 -8 l5 8 Z" fill="#E24B4A" />
+            <circle cx="9" cy="-11" r="1.6" fill="#fff" />
+            <rect x="12" y="-2" width="8" height="7" rx="1" fill="#97C459" />
+          </g>
+        </g>
         {[14, 40, 70, 98, 126, 152, 182].map((x, i) => (
           <circle key={x} className="sg-snow" cx={x} cy="-6" r={i % 2 ? 1.6 : 2.2} fill="#fff" style={{ animationDelay: `${-i * 1.3}s` }} />
         ))}
@@ -322,6 +412,20 @@ export default function SideGarden({ collapsed }: { collapsed: boolean }) {
             <text className="sg-zz" x="70" y="62" fontSize="9" fontWeight="600">
               z
             </text>
+            {season === "newyear" && (
+              <g className="sg-hat">
+                <path d="M34 66 q14 -6 30 0 q4 -12 10 -16 q-16 -10 -34 4 Z" fill="#E24B4A" stroke="#A32D2D" />
+                <rect x="32" y="62" width="34" height="6" rx="3" fill="#FFFFFF" />
+                <circle cx="75" cy="50" r="3.6" fill="#FFFFFF" />
+              </g>
+            )}
+            {season === "halloween" && (
+              <g className="sg-hat">
+                <ellipse cx="50" cy="66" rx="22" ry="4" fill="#26215C" />
+                <path d="M38 65 L52 36 L62 65 Z" fill="#3C3489" />
+                <rect x="40" y="58" width="21" height="4" fill="#EF9F27" />
+              </g>
+            )}
             <text className="sg-zz sg-zz-b" x="76" y="54" fontSize="12" fontWeight="600">
               Z
             </text>
@@ -334,6 +438,16 @@ export default function SideGarden({ collapsed }: { collapsed: boolean }) {
 
           <g className={`sg-rabbit${popping ? " sg-pop" : ""}`}>
             <g transform="translate(124 0)">
+              {season === "songkran" && (
+                <g className="sg-watergun">
+                  <path className="sg-stream" d="M-12 99 q-28 -20 -56 -8" stroke="#85B7EB" strokeWidth="2.2" fill="none" strokeLinecap="round" />
+                  <circle className="sg-drop" cx="-66" cy="92" r="1.6" fill="#85B7EB" />
+                  <circle className="sg-drop sg-drop-b" cx="-62" cy="88" r="1.3" fill="#85B7EB" />
+                  <rect x="-12" y="96" width="14" height="6" rx="2" fill="#378ADD" />
+                  <rect x="-2" y="101" width="4" height="6" rx="1" fill="#185FA5" />
+                  <rect x="-6" y="90" width="7" height="6" rx="2" fill="#E24B4A" />
+                </g>
+              )}
               <ellipse className="sg-rear" cx="8" cy="78" rx="3" ry="10" fill="#2C2C2A" />
               <ellipse className="sg-rear" cx="15" cy="78" rx="3" ry="10" fill="#2C2C2A" />
               <ellipse cx="8" cy="78" rx="1.2" ry="7" fill="#ED93B1" />
@@ -358,6 +472,19 @@ export default function SideGarden({ collapsed }: { collapsed: boolean }) {
           </g>
 
           <path d="M0 122 q60 -8 120 0 t80 -2 v20 h-200 Z" fill="#97C459" />
+            {season === "halloween" &&
+              [
+              [120, 110, 1],
+              [184, 112, 0.8],
+              ].map(([x, y, k], i) => (
+              <g key={`pumpkin${i}`} transform={`translate(${x} ${y}) scale(${k})`}>
+                <ellipse cx="0" cy="0" rx="9" ry="7" className="sg-glow" />
+                <ellipse cx="0" cy="0" rx="8" ry="6.5" fill="#EF9F27" stroke="#BA7517" />
+                <path d="M0 -6.5 v13 M-4 -6 q-2 6 0 12 M4 -6 q2 6 0 12" stroke="#BA7517" strokeWidth=".7" fill="none" />
+                <rect x="-1" y="-10" width="2" height="4" rx="1" fill="#3B6D11" />
+                <path d="M-5 -2 l2 -2 l2 2 Z M1 -2 l2 -2 l2 2 Z M-4 2 q4 3 8 0 l-2 1 l-2 -1 l-2 1 Z" className="sg-pumpkin-face" />
+              </g>
+              ))}
             {[
               [70, 60, 0],
               [128, 48, -1.4],
