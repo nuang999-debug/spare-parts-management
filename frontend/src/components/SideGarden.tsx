@@ -172,21 +172,25 @@ export default function SideGarden({ collapsed }: { collapsed: boolean }) {
 
   return (
     <div className={`side-garden${asleep ? " sg-sleep" : ""}`} aria-hidden>
-      {/* Collapsed menu: zoom in on the cat and its bush so it stays visible in the narrow icon rail. */}
+      {/* Collapsed menu: a tall, narrow window on the cat's column (the sky extends above the scene for it),
+          so the night sky still fills the whole icon rail. */}
       <svg
         className="sg-scene"
-        viewBox={collapsed ? `16 ${GROUND_Y + 46} 74 74` : "0 0 200 360"}
+        viewBox={collapsed ? "28 -140 44 500" : "0 0 200 360"}
         preserveAspectRatio={collapsed ? "xMidYMax meet" : "xMidYMax slice"}
         focusable="false"
       >
         <defs>
           <linearGradient id="sg-night" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#0b1a33" stopOpacity="0.15" />
-            <stop offset="0.55" stopColor="#0f2547" stopOpacity="0.75" />
+            {/* fully transparent at the top of the visible scene so it melts into the menu, any theme */}
+            <stop offset="0" stopColor="#0b1a33" stopOpacity="0" />
+            <stop offset="0.36" stopColor="#0b1a33" stopOpacity="0" />
+            <stop offset="0.56" stopColor="#0f2547" stopOpacity="0.4" />
+            <stop offset="0.8" stopColor="#0f2547" stopOpacity="0.8" />
             <stop offset="1" stopColor="#1e3a5f" stopOpacity="0.95" />
           </linearGradient>
         </defs>
-        <rect width="200" height="360" fill="url(#sg-night)" />
+        <rect y="-200" width="200" height="560" fill="url(#sg-night)" />
         {[
           [22, 60, 1.3],
           [64, 40, 1],
