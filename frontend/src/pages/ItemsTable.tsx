@@ -507,6 +507,10 @@ export default function ItemsTable({
     return base;
   }, [items, showAll, alertOnly, hasActiveFilter]);
 
+  // Set when arriving with a pending item; consumed once the filtered rows include it, so the
+  // table scrolls that row into view instead of leaving it wherever it happens to sort.
+  const [scrollTarget, setScrollTarget] = useState<{ id: number } | null>(null);
+
   // Mirrors the original's goToPlanItem(): arriving here with a pending item (from the Summary
   // tab) clears every filter that could hide it, temporarily shows BC=0 rows if needed, and
   // opens its detail panel — same as switchTab('plan') + applyF() + openDetail(no) there.
@@ -518,6 +522,7 @@ export default function ItemsTable({
       setAlertOnly(false);
       if (!((found.sumMin ?? 0) > 0)) setShowAll(true);
       setSelectedItemId(found.id);
+      setScrollTarget({ id: found.id });
     }
     onPendingItemHandled?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -671,6 +676,16 @@ export default function ItemsTable({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeCell]);
+
+  // Waits for the filter reset above to reach the row model, then centres the pending item's row.
+  useEffect(() => {
+    if (!scrollTarget) return;
+    const rowIndex = rows.findIndex((r) => r.original.id === scrollTarget.id);
+    if (rowIndex === -1) return;
+    setScrollTarget(null);
+    rowVirtualizer.scrollToIndex(rowIndex, { align: "center" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows, scrollTarget]);
 
   // Landing the Excel-style active-cell selection on the PR QTY column should drop straight
   // into typing, same as a spreadsheet — no extra click needed.
