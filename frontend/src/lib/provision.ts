@@ -1,3 +1,5 @@
+import { tr } from "./i18n";
+
 /** Provision Status arrives as "Obsolete_<months>" (the only values the backend keeps). */
 export function provisionMonths(status: string | null | undefined): number | null {
   const m = status?.match(/^Obsolete_(\d+)$/);
@@ -11,8 +13,9 @@ export function provisionTone(months: number): ProvisionTone {
   return months <= 12 ? "low" : months <= 18 ? "mid" : "high";
 }
 
-export const provisionShortLabel = (months: number) => `${months} เดือน`;
-export const provisionLongLabel = (months: number) => `ติด Provision ${months} เดือน`;
+export const provisionShortLabel = (months: number) => tr(`${months} เดือน`, `${months} months`);
+export const provisionLongLabel = (months: number) =>
+  tr(`ติด Provision ${months} เดือน`, `Under provision ${months} months`);
 
 export interface ReplacementNote {
   head: string;

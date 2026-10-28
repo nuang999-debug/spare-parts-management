@@ -2,15 +2,15 @@ import { useEffect, useState } from "react";
 
 /** Each id has a matching `:root[data-theme="<id>"]` block in App.css ("dark" is the default :root). */
 export const THEMES = [
-  { id: "dark", label: "มืด" },
-  { id: "light", label: "สว่าง" },
-  { id: "latte", label: "Catppuccin Latte" },
-  { id: "nord", label: "Nord" },
-  { id: "tokyo", label: "Tokyo Night" },
-  { id: "gruvbox", label: "Gruvbox Dark" },
-  { id: "everforest", label: "Everforest" },
-  { id: "dracula", label: "Dracula" },
-  { id: "solarized-light", label: "Solarized Light" },
+  { id: "dark", label: "มืด", labelEn: "Dark" },
+  { id: "light", label: "สว่าง", labelEn: "Light" },
+  { id: "latte", label: "Catppuccin Latte", labelEn: "Catppuccin Latte" },
+  { id: "nord", label: "Nord", labelEn: "Nord" },
+  { id: "tokyo", label: "Tokyo Night", labelEn: "Tokyo Night" },
+  { id: "gruvbox", label: "Gruvbox Dark", labelEn: "Gruvbox Dark" },
+  { id: "everforest", label: "Everforest", labelEn: "Everforest" },
+  { id: "dracula", label: "Dracula", labelEn: "Dracula" },
+  { id: "solarized-light", label: "Solarized Light", labelEn: "Solarized Light" },
 ] as const;
 
 export type Theme = (typeof THEMES)[number]["id"];

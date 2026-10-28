@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { BarChart3, Printer, Table2 } from "lucide-react";
 import ItemsTable from "./ItemsTable";
+import { tr } from "../lib/i18n";
 import SummaryTab from "./SummaryTab";
 
 export default function PlanningPage() {
@@ -13,18 +14,18 @@ export default function PlanningPage() {
   return (
     <div className="planning-page">
       <div className="tabs-bar">
-        <h1 className="page-title">วางแผนสั่งซื้อ</h1>
-        <div className="seg" role="tablist" aria-label="มุมมอง">
+        <h1 className="page-title">{tr("วางแผนสั่งซื้อ", "Order planning")}</h1>
+        <div className="seg" role="tablist" aria-label={tr("มุมมอง", "View")}>
           <button type="button" role="tab" aria-selected={tab === "plan"} className={`seg-btn ${tab === "plan" ? "on" : ""}`} onClick={() => setTab("plan")}>
-            <Table2 size={15} strokeWidth={1.8} aria-hidden /> ตารางวางแผน
+            <Table2 size={15} strokeWidth={1.8} aria-hidden /> {tr("ตารางวางแผน", "Planning table")}
           </button>
           <button type="button" role="tab" aria-selected={tab === "sum"} className={`seg-btn ${tab === "sum" ? "on" : ""}`} onClick={() => setTab("sum")}>
-            <BarChart3 size={15} strokeWidth={1.8} aria-hidden /> สรุปภาพรวม
+            <BarChart3 size={15} strokeWidth={1.8} aria-hidden /> {tr("สรุปภาพรวม", "Overview")}
           </button>
         </div>
         {tab === "sum" && (
           <button type="button" className="print-btn" onClick={() => window.print()}>
-            <Printer size={15} strokeWidth={1.8} aria-hidden /> พิมพ์/PDF
+            <Printer size={15} strokeWidth={1.8} aria-hidden /> {tr("พิมพ์/PDF", "Print/PDF")}
           </button>
         )}
       </div>

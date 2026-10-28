@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import * as THREE from "three";
 import { useAuth } from "../auth/AuthContext";
 import { ApiError } from "../api/client";
+import { tr } from "../lib/i18n";
 import "./Login.css";
 
 /** Cursor parallax on the background layers + card tilt + magnetic submit button — all purely
@@ -335,12 +336,12 @@ export default function Login() {
               </div>
 
               <div className="eyebrow">Spare Parts Management</div>
-              <h1 className="card-title">เข้าสู่ระบบ</h1>
+              <h1 className="card-title">{tr("เข้าสู่ระบบ", "Sign in")}</h1>
               <div className="card-sub">NILFISK &amp; FHCS Partner Portal</div>
 
               <form onSubmit={handleSubmit} noValidate>
                 <div className={`field${shake ? " shake" : ""}`} onAnimationEnd={() => setShake(false)}>
-                  <label htmlFor="user">ชื่อผู้ใช้</label>
+                  <label htmlFor="user">{tr("ชื่อผู้ใช้", "Username")}</label>
                   <div className="input-shell">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                       <path d="M20 21a8 8 0 0 0-16 0" />
@@ -364,7 +365,7 @@ export default function Login() {
                 </div>
 
                 <div className={`field${shake ? " shake" : ""}`}>
-                  <label htmlFor="pass">รหัสผ่าน</label>
+                  <label htmlFor="pass">{tr("รหัสผ่าน", "Password")}</label>
                   <div className="input-shell">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                       <rect x="4" y="10" width="16" height="10" rx="2" />
@@ -389,16 +390,21 @@ export default function Login() {
                 <div className="row">
                   <label className="remember">
                     <input type="checkbox" />
-                    จดจำฉันไว้
+                    {tr("จดจำฉันไว้", "Remember me")}
                   </label>
                   <a
                     href="#"
                     onClick={(e) => {
                       e.preventDefault();
-                      setInfoMessage("ระบบยังไม่รองรับการรีเซ็ตรหัสผ่านด้วยตัวเอง กรุณาติดต่อผู้ดูแลระบบ");
+                      setInfoMessage(
+                        tr(
+                          "ระบบยังไม่รองรับการรีเซ็ตรหัสผ่านด้วยตัวเอง กรุณาติดต่อผู้ดูแลระบบ",
+                          "Self-service password reset isn't available yet. Please contact an administrator.",
+                        ),
+                      );
                     }}
                   >
-                    ลืมรหัสผ่าน?
+                    {tr("ลืมรหัสผ่าน?", "Forgot password?")}
                   </a>
                 </div>
 
@@ -413,21 +419,23 @@ export default function Login() {
                   onClick={onSubmitClick}
                 >
                   <span className="btn-label">
-                    {success ? "สำเร็จ ✓" : submitting ? "กำลังตรวจสอบ..." : "เข้าสู่ระบบ"}
+                    {success ? tr("สำเร็จ ✓", "Done ✓") : submitting ? tr("กำลังตรวจสอบ...", "Checking...") : tr("เข้าสู่ระบบ", "Sign in")}
                   </span>
                 </button>
               </form>
 
               <div className="foot">
-                ต้องการสิทธิ์เข้าใช้งาน?{" "}
+                {tr("ต้องการสิทธิ์เข้าใช้งาน?", "Need access?")}{" "}
                 <a
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    setInfoMessage("กรุณาติดต่อผู้ดูแลระบบ (แอดมิน) เพื่อขอสิทธิ์เข้าใช้งาน");
+                    setInfoMessage(
+                      tr("กรุณาติดต่อผู้ดูแลระบบ (แอดมิน) เพื่อขอสิทธิ์เข้าใช้งาน", "Please contact an administrator to request access."),
+                    );
                   }}
                 >
-                  ติดต่อผู้ดูแลระบบ
+                  {tr("ติดต่อผู้ดูแลระบบ", "Contact an administrator")}
                 </a>
               </div>
             </div>

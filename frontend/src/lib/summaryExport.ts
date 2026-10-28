@@ -1,7 +1,7 @@
 import * as XLSX from "xlsx";
 import type { ChangeRow } from "./summary";
 import type { ItemListRow } from "../api/items";
-import { thaiMonthLabel } from "./thaiMonths";
+import { thaiMonthLabelTh as thaiMonthLabel } from "./thaiMonths";
 import { trendPercent } from "./analysis";
 
 function todayStamp(): string {

@@ -1,3 +1,4 @@
+import { tr } from "./i18n";
 import type { CalcTrend, ItemListRow, ItemUsageHistoryRow } from "../api/items";
 import { provisionMonths } from "./provision";
 
@@ -157,7 +158,7 @@ export function buildCategoryMinBreakdown(items: ItemListRow[]): CategoryMinBrea
     { total: number; withMin: number; stockWithMin: number; stockWithoutMin: number; withoutMinStockGt0: number }
   >();
   for (const it of items) {
-    const key = it.category ?? "(ไม่ระบุกลุ่ม)";
+    const key = it.category ?? tr("(ไม่ระบุกลุ่ม)", "(no group)");
     const g = groups.get(key) ?? { total: 0, withMin: 0, stockWithMin: 0, stockWithoutMin: 0, withoutMinStockGt0: 0 };
     g.total++;
     if ((it.sumMin ?? 0) > 0) {
@@ -254,7 +255,7 @@ export interface MonthsToNormal {
 export function calcMonthsToNormal(currentStock: number, totalNext: number[], sumMinTotal: number): MonthsToNormal | null {
   if (sumMinTotal <= 0) return null;
   const totals = [currentStock, ...totalNext];
-  const labels = ["ปัจจุบัน", "Next-0", "Next-1", "Next-2", "Next-3", "Next-4", "Next-5"];
+  const labels = [tr("ปัจจุบัน", "Now"), "Next-0", "Next-1", "Next-2", "Next-3", "Next-4", "Next-5"];
   for (let i = 0; i < totals.length; i++) {
     if (totals[i] >= sumMinTotal) {
       return { monthIdx: i, label: labels[i], found: true, value: totals[i] };

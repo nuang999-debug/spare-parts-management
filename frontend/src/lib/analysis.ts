@@ -1,3 +1,4 @@
+import { tr } from "./i18n";
 import type { ItemDetail } from "../api/items";
 import { thaiMonthLabel } from "./thaiMonths";
 
@@ -31,10 +32,10 @@ export function findTrigger(next: number[], sumMin: number | null): TriggerResul
 export type Urgency = "danger" | "warn" | "info" | "ok";
 
 export function urgencyLabel(triggerMonth: number): { label: string; tone: Urgency } {
-  if (triggerMonth === 0) return { label: "สั่งด่วน!", tone: "danger" };
-  if (triggerMonth === 1) return { label: "ควรสั่งเร็วๆ นี้", tone: "warn" };
-  if (triggerMonth >= 2) return { label: "วางแผนสั่ง", tone: "info" };
-  return { label: "ยังไม่จำเป็น", tone: "ok" };
+  if (triggerMonth === 0) return { label: tr("สั่งด่วน!", "Order now!"), tone: "danger" };
+  if (triggerMonth === 1) return { label: tr("ควรสั่งเร็วๆ นี้", "Order soon"), tone: "warn" };
+  if (triggerMonth >= 2) return { label: tr("วางแผนสั่ง", "Plan an order"), tone: "info" };
+  return { label: tr("ยังไม่จำเป็น", "Not needed yet"), tone: "ok" };
 }
 
 /**

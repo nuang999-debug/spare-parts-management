@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import type { ItemListRow } from "../api/items";
 import { ArtDanger, ArtPr, ArtStock, ArtValue, ArtWarn } from "./KpiArt";
 import { thaiMonthLabel } from "../lib/thaiMonths";
+import { tr } from "../lib/i18n";
 
 export type KpiFilter = "DANGER" | "WARN" | "PR" | null;
 
@@ -68,16 +69,16 @@ export default function KpiBar({
 
   return (
     <div className="kpi-bar">
-      <Card icon={Layers} tone="accent" label="รายการทั้งหมด" value={total.toLocaleString()} sub={`${withMin.toLocaleString()} รายการมี Sum MIN`} art={<ArtStock />} />
+      <Card icon={Layers} tone="accent" label={tr("รายการทั้งหมด", "Total items")} value={total.toLocaleString()} sub={tr(`${withMin.toLocaleString()} รายการมี Sum MIN`, `${withMin.toLocaleString()} with Sum MIN`)} art={<ArtStock />} />
       <Card
         icon={AlertOctagon}
         tone="danger"
         label="Next-0 < Sum MIN"
         value={danger.toLocaleString()}
-        sub="วิกฤต · ต้องสั่งทันที"
+        sub={tr("วิกฤต · ต้องสั่งทันที", "Critical · order now")}
         active={active === "DANGER"}
         onClick={onSelect ? () => toggle("DANGER") : undefined}
-        hint="คลิกเพื่อกรองเฉพาะรายการวิกฤต"
+        hint={tr("คลิกเพื่อกรองเฉพาะรายการวิกฤต", "Click to show critical items only")}
         art={<ArtDanger />}
       />
       <Card
@@ -85,24 +86,24 @@ export default function KpiBar({
         tone="warning"
         label="Next-1 < Sum MIN"
         value={warn.toLocaleString()}
-        sub="ระวัง · วางแผนสั่ง"
+        sub={tr("ระวัง · วางแผนสั่ง", "Warning · plan an order")}
         active={active === "WARN"}
         onClick={onSelect ? () => toggle("WARN") : undefined}
-        hint="คลิกเพื่อกรองเฉพาะรายการระวัง"
+        hint={tr("คลิกเพื่อกรองเฉพาะรายการระวัง", "Click to show warning items only")}
         art={<ArtWarn monthLabel={thaiMonthLabel(1)} />}
       />
       <Card
         icon={FileText}
         tone="accent2"
-        label="มี PR qty"
+        label={tr("มี PR qty", "With PR qty")}
         value={withPr.toLocaleString()}
-        sub="รายการที่ใส่ PR แล้ว"
+        sub={tr("รายการที่ใส่ PR แล้ว", "Items with a PR")}
         active={active === "PR"}
         onClick={onSelect ? () => toggle("PR") : undefined}
-        hint="คลิกเพื่อกรองเฉพาะรายการที่มี PR"
+        hint={tr("คลิกเพื่อกรองเฉพาะรายการที่มี PR", "Click to show items with a PR only")}
         art={<ArtPr />}
       />
-      <Card icon={Coins} tone="warning" label="มูลค่า PR รวม" value={`฿${(prValue / 1e6).toFixed(2)}M`} sub="ตามราคาซื้อ" art={<ArtValue />} />
+      <Card icon={Coins} tone="warning" label={tr("มูลค่า PR รวม", "Total PR value")} value={`฿${(prValue / 1e6).toFixed(2)}M`} sub={tr("ตามราคาซื้อ", "At purchase price")} art={<ArtValue />} />
     </div>
   );
 }

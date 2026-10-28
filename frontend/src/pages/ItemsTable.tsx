@@ -26,6 +26,7 @@ import { thaiMonthLabel } from "../lib/thaiMonths";
 import { nextCellTone } from "../lib/analysis";
 import { provisionLongLabel, provisionMonths, provisionShortLabel, provisionTone } from "../lib/provision";
 import { exportCSV } from "../lib/exportCsv";
+import { dateLocale, tr, useLang } from "../lib/i18n";
 import { useAuth } from "../auth/AuthContext";
 
 declare module "@tanstack/react-table" {
@@ -36,7 +37,10 @@ declare module "@tanstack/react-table" {
     /** Display text for a select option whose stored value isn't suitable to show as-is. */
     selectLabel?: (value: string) => string;
     /** Tooltip on a text filter input, for a search that matches more than the column itself. */
-    filterTitle?: string;
+    filterTitle?: () => string;
+    /** Column name in the current UI language (for filter chips); headers that are functions
+     *  translate at render time, so they can't be read as a plain string. */
+    label?: () => string;
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface TableMeta<TData> {
@@ -129,10 +133,10 @@ const shortageFilter: FilterFn<ItemListRow> = (row, columnId, filterValue) => {
 const historyColumns = Array.from({ length: 6 }, (_, i) =>
   columnHelper.accessor((row) => row.usageHistory[i]?.qty ?? null, {
     id: `hist${i}`,
-    header: thaiMonthLabel(i - 6),
+    header: () => thaiMonthLabel(i - 6),
     size: 58,
     filterFn: gteFilter,
-    meta: { filterType: "gte" },
+    meta: { filterType: "gte", label: () => thaiMonthLabel(i - 6) },
     cell: (info) => {
       const value = info.getValue();
       if (value == null) return "-";
@@ -146,10 +150,10 @@ const historyColumns = Array.from({ length: 6 }, (_, i) =>
 const nextColumn = (n: 0 | 1 | 2 | 3 | 4 | 5) =>
   columnHelper.accessor(`next${n}`, {
     id: `next${n}`,
-    header: `NEXT-${n} ${thaiMonthLabel(n)}`,
+    header: () => `NEXT-${n} ${thaiMonthLabel(n)}`,
     size: 100,
     filterFn: gteFilter,
-    meta: { filterType: "gte" },
+    meta: { filterType: "gte", label: () => `NEXT-${n} ${thaiMonthLabel(n)}` },
     cell: (info) => {
       const value = info.getValue();
       if (value == null) return "-";
@@ -160,7 +164,7 @@ const nextColumn = (n: 0 | 1 | 2 | 3 | 4 | 5) =>
 
 const columns = [
   columnHelper.accessor("itemNoRaw", {
-    header: "รหัส",
+    header: () => tr("รหัส", "Code"),
     size: 120,
     filterFn: "includesString",
     meta: { filterType: "text" },
@@ -168,8 +172,15 @@ const columns = [
       const item = info.row.original;
       if (!item.isStale && !item.discontinuedModel) return info.getValue();
       const title = [
-        item.discontinuedModel ? `Model ยกเลิกขาย: ${item.discontinuedModel} — ระวังก่อนสั่งซื้อเพิ่ม` : null,
-        item.isStale ? "ไม่พบในไฟล์ import ล่าสุด — ข้อมูลนี้อาจไม่เป็นปัจจุบัน" : null,
+        item.discontinuedModel
+          ? tr(
+              `Model ยกเลิกขาย: ${item.discontinuedModel} — ระวังก่อนสั่งซื้อเพิ่ม`,
+              `Model discontinued: ${item.discontinuedModel} — check before ordering more`
+            )
+          : null,
+        item.isStale
+          ? tr("ไม่พบในไฟล์ import ล่าสุด — ข้อมูลนี้อาจไม่เป็นปัจจุบัน", "Not in the latest import file — this data may be out of date")
+          : null,
       ]
         .filter(Boolean)
         .join(" · ");
@@ -183,28 +194,33 @@ const columns = [
     },
   }),
   columnHelper.accessor("description", {
-    header: "ชื่ออะไหล่",
+    header: () => tr("ชื่ออะไหล่", "Part name"),
     size: 220,
     filterFn: descriptionSearchFilter,
-    meta: { filterType: "text", filterTitle: "ค้นหาจากชื่อ และ Description 2" },
+    meta: {
+      filterType: "text",
+      filterTitle: () => tr("ค้นหาจากชื่อ และ Description 2", "Searches the name and Description 2"),
+      label: () => tr("ชื่ออะไหล่", "Part name"),
+    },
   }),
   columnHelper.accessor((row) => shortageMonth(row), {
     id: "shortage",
-    header: "ขาดเดือน",
+    header: () => tr("ขาดเดือน", "Short in"),
     size: 74,
     filterFn: shortageFilter,
     sortUndefined: "last",
     meta: {
       filterType: "select",
       selectOptions: ["0", "1", "2", "3", "4", "5", SHORTAGE_NONE],
-      selectLabel: (v) => (v === SHORTAGE_NONE ? "ไม่ขาด" : `NEXT-${v} ${thaiMonthLabel(Number(v))}`),
-      filterTitle: "เดือนแรกที่ NEXT ต่ำกว่า Sum MIN",
+      selectLabel: (v) => (v === SHORTAGE_NONE ? tr("ไม่ขาด", "Not short") : `NEXT-${v} ${thaiMonthLabel(Number(v))}`),
+      filterTitle: () => tr("เดือนแรกที่ NEXT ต่ำกว่า Sum MIN", "First month NEXT drops below Sum MIN"),
+      label: () => tr("ขาดเดือน", "Short in"),
     },
     cell: (info) => {
       const v = info.getValue();
       if (v == null) return <span className="shortage-none">—</span>;
       return (
-        <span className={`shortage-cell ${v === 0 ? "now" : v === 1 ? "soon" : "later"}`} title={`NEXT-${v} ต่ำกว่า Sum MIN`}>
+        <span className={`shortage-cell ${v === 0 ? "now" : v === 1 ? "soon" : "later"}`} title={tr(`NEXT-${v} ต่ำกว่า Sum MIN`, `NEXT-${v} below Sum MIN`)}>
           {thaiMonthLabel(v)}
         </span>
       );
@@ -285,7 +301,7 @@ const columns = [
       selectOptions: [PROVISION_ANY, "Obsolete_12", "Obsolete_18", "Obsolete_24"],
       selectLabel: (v) => {
         const months = provisionMonths(v);
-        return months === null ? "ทุกระดับ" : provisionShortLabel(months);
+        return months === null ? tr("ทุกระดับ", "Any") : provisionShortLabel(months);
       },
     },
     cell: (info) => {
@@ -327,13 +343,15 @@ const columns = [
   nextColumn(4),
   nextColumn(5),
   columnHelper.accessor("calcStatus", {
-    header: "สถานะ",
+    header: () => tr("สถานะ", "Status"),
     size: 70,
     filterFn: "equalsString",
     meta: {
       filterType: "select",
       selectOptions: ["DANGER", "WARN", "OK"],
-      selectLabel: (v) => ({ DANGER: "วิกฤต", WARN: "ระวัง", OK: "ปกติ" })[v] ?? v,
+      selectLabel: (v) =>
+        ({ DANGER: tr("วิกฤต", "Critical"), WARN: tr("ระวัง", "Warning"), OK: tr("ปกติ", "OK") })[v] ?? v,
+      label: () => tr("สถานะ", "Status"),
     },
     cell: (info) => <StatusBadge status={info.getValue()} />,
   }),
@@ -347,8 +365,8 @@ function FilterCell({ column, items }: { column: Column<ItemListRow, unknown>; i
     return (
       <input
         type="text"
-        placeholder="ค้นหา"
-        title={meta.filterTitle}
+        placeholder={tr("ค้นหา", "Search")}
+        title={meta.filterTitle?.()}
         value={filterValue}
         onChange={(e) => column.setFilterValue(e.target.value || undefined)}
       />
@@ -361,7 +379,7 @@ function FilterCell({ column, items }: { column: Column<ItemListRow, unknown>; i
       [...new Set(items.map((row) => row[column.id as keyof ItemListRow]).filter((v): v is string => !!v))].sort();
     return (
       <select value={filterValue} onChange={(e) => column.setFilterValue(e.target.value || undefined)}>
-        <option value="">ทั้ง</option>
+        <option value="">{tr("ทั้ง", "All")}</option>
         {options.map((opt) => (
           <option key={opt} value={opt}>
             {meta.selectLabel ? meta.selectLabel(opt) : opt}
@@ -415,6 +433,7 @@ export default function ItemsTable({
   onPendingItemHandled?: () => void;
 }) {
   const { data: items, isLoading } = useQuery({ queryKey: ["items"], queryFn: listItems });
+  useLang(); // re-render (headers, labels) when the UI language changes
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const prInputRefs = useRef<Map<number, HTMLInputElement>>(new Map()); // keyed by item id, not row index
@@ -767,28 +786,37 @@ export default function ItemsTable({
         <span className="items-count">
           <b>{rows.length.toLocaleString()}</b>
           {showAll
-            ? ` / ${(items?.length ?? 0).toLocaleString()} รายการ (รวมที่ไม่มี Sum MIN)`
+            ? tr(
+                ` / ${(items?.length ?? 0).toLocaleString()} รายการ (รวมที่ไม่มี Sum MIN)`,
+                ` / ${(items?.length ?? 0).toLocaleString()} items (incl. no Sum MIN)`
+              )
             : includesZeroBc
-              ? ` รายการ (รวมที่ไม่มี Sum MIN เพราะมีการค้นหา/กรอง) จาก ${(items?.length ?? 0).toLocaleString()}`
-              : ` รายการ (มี Sum MIN) จาก ${(items?.length ?? 0).toLocaleString()}`}
+              ? tr(
+                  ` รายการ (รวมที่ไม่มี Sum MIN เพราะมีการค้นหา/กรอง) จาก ${(items?.length ?? 0).toLocaleString()}`,
+                  ` items (incl. no Sum MIN because of the search/filter) of ${(items?.length ?? 0).toLocaleString()}`
+                )
+              : tr(
+                  ` รายการ (มี Sum MIN) จาก ${(items?.length ?? 0).toLocaleString()}`,
+                  ` items (with Sum MIN) of ${(items?.length ?? 0).toLocaleString()}`
+                )}
         </span>
         {lastImport && (
-          <span className="data-fresh" title="วันที่นำเข้าไฟล์ Items ล่าสุด">
-            <RefreshCw size={12} strokeWidth={2} aria-hidden /> ข้อมูล{" "}
-            {lastImport.toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "2-digit" })}
+          <span className="data-fresh" title={tr("วันที่นำเข้าไฟล์ Items ล่าสุด", "Date of the latest Items import")}>
+            <RefreshCw size={12} strokeWidth={2} aria-hidden /> {tr("ข้อมูล", "Data")}{" "}
+            {lastImport.toLocaleDateString(dateLocale(), { day: "numeric", month: "short", year: "2-digit" })}
           </span>
         )}
         {(columnFilters.length > 0 || alertOnly) && (
           <div className="filter-chips">
             {alertOnly && (
-              <button type="button" className="fchip" onClick={() => setAlertOnly(false)} title="เอาตัวกรองนี้ออก">
-                เฉพาะต้องสั่ง <X size={12} aria-hidden />
+              <button type="button" className="fchip" onClick={() => setAlertOnly(false)} title={tr("เอาตัวกรองนี้ออก", "Remove this filter")}>
+                {tr("เฉพาะต้องสั่ง", "Must-order only")} <X size={12} aria-hidden />
               </button>
             )}
             {columnFilters.map((f) => {
               const col = table.getColumn(f.id);
               const meta = col?.columnDef.meta;
-              const label = typeof col?.columnDef.header === "string" ? col.columnDef.header : f.id;
+              const label = meta?.label?.() ?? (typeof col?.columnDef.header === "string" ? col.columnDef.header : f.id);
               const raw = String(f.value);
               const val = meta?.filterType === "gte" ? `≥ ${raw}` : meta?.selectLabel ? meta.selectLabel(raw) : raw;
               return (
@@ -797,7 +825,7 @@ export default function ItemsTable({
                   key={f.id}
                   className="fchip"
                   onClick={() => setColumnFilters((prev) => prev.filter((x) => x.id !== f.id))}
-                  title="เอาตัวกรองนี้ออก"
+                  title={tr("เอาตัวกรองนี้ออก", "Remove this filter")}
                 >
                   {label}: {val} <X size={12} aria-hidden />
                 </button>
@@ -810,18 +838,22 @@ export default function ItemsTable({
             type="button"
             className={alertOnly ? "on" : ""}
             onClick={() => setAlertOnly((v) => !v)}
-            title="แสดงเฉพาะรายการวิกฤตและระวัง"
+            title={tr("แสดงเฉพาะรายการวิกฤตและระวัง", "Show critical and warning items only")}
           >
-            <AlertOctagon size={15} strokeWidth={1.8} aria-hidden /> เฉพาะต้องสั่ง
+            <AlertOctagon size={15} strokeWidth={1.8} aria-hidden /> {tr("เฉพาะต้องสั่ง", "Must-order only")}
           </button>
           <button
             type="button"
             className={showAll ? "on-neutral" : ""}
             onClick={() => setShowAll((v) => !v)}
-            title={showAll ? `ซ่อนรายการที่ไม่มี Sum MIN (${zeroSumMinCount} รายการ)` : "แสดงทั้งหมด รวมรายการที่ไม่มี Sum MIN"}
+            title={
+              showAll
+                ? tr(`ซ่อนรายการที่ไม่มี Sum MIN (${zeroSumMinCount} รายการ)`, `Hide items without Sum MIN (${zeroSumMinCount})`)
+                : tr("แสดงทั้งหมด รวมรายการที่ไม่มี Sum MIN", "Show everything, including items without Sum MIN")
+            }
           >
             {showAll ? <EyeOff size={15} strokeWidth={1.8} aria-hidden /> : <Eye size={15} strokeWidth={1.8} aria-hidden />}
-            {showAll ? "ซ่อนที่ไม่มี MIN" : "รวมที่ไม่มี MIN"}
+            {showAll ? tr("ซ่อนที่ไม่มี MIN", "Hide no-MIN") : tr("รวมที่ไม่มี MIN", "Include no-MIN")}
           </button>
           <button
             type="button"
@@ -830,11 +862,11 @@ export default function ItemsTable({
               setAlertOnly(false);
               setShowAll(false);
             }}
-            title="ล้างตัวกรองทั้งหมด"
+            title={tr("ล้างตัวกรองทั้งหมด", "Clear all filters")}
           >
-            <Filter size={15} strokeWidth={1.8} aria-hidden /> ล้าง Filter
+            <Filter size={15} strokeWidth={1.8} aria-hidden /> {tr("ล้าง Filter", "Clear filters")}
           </button>
-          <button type="button" onClick={() => exportCSV(rows.map((r) => r.original))} title="ส่งออกรายการที่แสดงอยู่เป็น CSV">
+          <button type="button" onClick={() => exportCSV(rows.map((r) => r.original))} title={tr("ส่งออกรายการที่แสดงอยู่เป็น CSV", "Export the listed items as CSV")}>
             <Download size={15} strokeWidth={1.8} aria-hidden /> Export CSV
           </button>
           {user?.role === "ADMIN" && (
@@ -850,7 +882,7 @@ export default function ItemsTable({
               <button
                 type="button"
                 className="icon-only"
-                aria-label="เมนูเพิ่มเติม"
+                aria-label={tr("เมนูเพิ่มเติม", "More actions")}
                 aria-expanded={moreOpen}
                 onClick={() => setMoreOpen((v) => !v)}
               >
@@ -865,7 +897,15 @@ export default function ItemsTable({
                     disabled={clearAllPrMutation.isPending}
                     onClick={async () => {
                       setMoreOpen(false);
-                      if (!window.confirm("ต้องการล้างค่า PR QTY ของทุกรายการทั้งหมดใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้")) return;
+                      if (
+                        !window.confirm(
+                          tr(
+                            "ต้องการล้างค่า PR QTY ของทุกรายการทั้งหมดใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้",
+                            "Clear the PR QTY of every item? This can't be undone."
+                          )
+                        )
+                      )
+                        return;
                       // A PR cell mid-edit (typed but not yet saved, or already saving) races the bulk
                       // clear below over the network: if that individual PATCH commits AFTER this
                       // request's DB write, the row keeps its value — looks exactly like "clicked clear
@@ -880,7 +920,7 @@ export default function ItemsTable({
                       clearAllPrMutation.mutate();
                     }}
                   >
-                    <Trash2 size={15} strokeWidth={1.8} aria-hidden /> ล้าง PR ทั้งหมด
+                    <Trash2 size={15} strokeWidth={1.8} aria-hidden /> {tr("ล้าง PR ทั้งหมด", "Clear all PR")}
                   </button>
                 </div>
               )}
@@ -1041,12 +1081,17 @@ export default function ItemsTable({
             fallback={
               <aside className="detail-panel">
                 <div className="detail-panel-header">
-                  <h2>เกิดข้อผิดพลาดในการแสดงผล</h2>
+                  <h2>{tr("เกิดข้อผิดพลาดในการแสดงผล", "Something went wrong showing this item")}</h2>
                   <button type="button" onClick={() => setSelectedItemId(null)}>
-                    Close
+                    {tr("ปิด", "Close")}
                   </button>
                 </div>
-                <p style={{ padding: "1rem" }}>ไม่สามารถแสดงรายละเอียดของรายการนี้ได้ ลองเลือกรายการอื่นแล้วกลับมาใหม่</p>
+                <p style={{ padding: "1rem" }}>
+                  {tr(
+                    "ไม่สามารถแสดงรายละเอียดของรายการนี้ได้ ลองเลือกรายการอื่นแล้วกลับมาใหม่",
+                    "Couldn't show this item's details. Pick another item, then come back to it."
+                  )}
+                </p>
               </aside>
             }
           >

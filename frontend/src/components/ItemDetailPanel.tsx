@@ -35,14 +35,15 @@ import {
   X,
 } from "lucide-react";
 import { StatusBadge } from "./StatusBadge";
+import { dateLocale, tr } from "../lib/i18n";
 
-const SECTIONS: Array<[string, string]> = [
-  ["sec-overview", "ภาพรวม"],
-  ["sec-charts", "กราฟ"],
-  ["sec-plan", "แผนสั่งซื้อ"],
-  ["sec-analysis", "วิเคราะห์"],
-  ["sec-fields", "ข้อมูลทั้งหมด"],
-  ["sec-history", "ประวัติแก้ไข"],
+const SECTIONS: Array<[string, string, string]> = [
+  ["sec-overview", "ภาพรวม", "Overview"],
+  ["sec-charts", "กราฟ", "Charts"],
+  ["sec-plan", "แผนสั่งซื้อ", "Order plan"],
+  ["sec-analysis", "วิเคราะห์", "Analysis"],
+  ["sec-fields", "ข้อมูลทั้งหมด", "All fields"],
+  ["sec-history", "ประวัติแก้ไข", "Edit history"],
 ];
 
 // Theme variables, not hex: the chart then follows whichever theme is active (SVG attributes and
@@ -117,14 +118,14 @@ function PoDueDatesList({ rows }: { rows: PoDueDateRow[] }) {
       {visible.map((r) => (
         <Fragment key={r.date ?? "none"}>
           <span className="po-due-date-label" style={r.date === null ? { color: "var(--warning)" } : undefined}>
-            {r.date ? formatPoDueDate(r.date) : "ไม่ระบุวันที่"}
+            {r.date ? formatPoDueDate(r.date) : tr("ไม่ระบุวันที่", "No date")}
           </span>
           <span className="po-due-date-qty">{fmtN(r.qty, 0)}</span>
         </Fragment>
       ))}
       {!expanded && hidden.length > 0 && (
         <button type="button" className="po-due-date-toggle" onClick={() => setExpanded(true)}>
-          <span>+{hidden.length} วันอื่น</span>
+          <span>+{hidden.length} {tr("วันอื่น", "more dates")}</span>
           <span>{fmtN(hiddenTotal, 0)}</span>
         </button>
       )}
@@ -134,17 +135,17 @@ function PoDueDatesList({ rows }: { rows: PoDueDateRow[] }) {
           className="po-due-date-toggle po-due-date-toggle-collapse"
           onClick={() => setExpanded(false)}
         >
-          ▲ ย่อ
+          ▲ {tr("ย่อ", "Less")}
         </button>
       )}
     </div>
   );
 }
 
-const STATUS_DASHBOARD: Record<string, { label: string; color: string }> = {
-  DANGER: { label: "วิกฤต", color: "var(--danger)" },
-  WARN: { label: "ระวัง", color: "var(--warning)" },
-  OK: { label: "ปกติ", color: "var(--success)" },
+const STATUS_DASHBOARD: Record<string, { label: [string, string]; color: string }> = {
+  DANGER: { label: ["วิกฤต", "Critical"], color: "var(--danger)" },
+  WARN: { label: ["ระวัง", "Warning"], color: "var(--warning)" },
+  OK: { label: ["ปกติ", "OK"], color: "var(--success)" },
 };
 
 const DEFAULT_WIDTH = 520;
@@ -212,7 +213,7 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
   if (collapsed) {
     return (
       <aside ref={panelRef} className="detail-panel detail-panel-collapsed">
-        <button type="button" className="detail-panel-toggle" onClick={() => setCollapsed(false)} title="ขยาย" aria-label="ขยายแผงรายละเอียด">
+        <button type="button" className="detail-panel-toggle" onClick={() => setCollapsed(false)} title={tr("ขยาย", "Expand")} aria-label={tr("ขยายแผงรายละเอียด", "Expand the details panel")}>
           <ChevronsLeft size={16} strokeWidth={1.8} />
         </button>
       </aside>
@@ -234,23 +235,23 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
           {item?.description && <div className="dph-desc">{item.description}</div>}
         </div>
         <div className="detail-panel-header-actions">
-          <button type="button" className="icon-only" onClick={() => setCollapsed(true)} title="หุบแผง" aria-label="หุบแผง">
+          <button type="button" className="icon-only" onClick={() => setCollapsed(true)} title={tr("หุบแผง", "Collapse panel")} aria-label={tr("หุบแผง", "Collapse panel")}>
             <ChevronsRight size={16} strokeWidth={1.8} />
           </button>
-          <button type="button" className="icon-only" onClick={onClose} title="ปิด" aria-label="ปิด">
+          <button type="button" className="icon-only" onClick={onClose} title={tr("ปิด", "Close")} aria-label={tr("ปิด", "Close")}>
             <X size={16} strokeWidth={1.8} />
           </button>
         </div>
       </div>
       {item && (
-        <nav className="dp-jump" aria-label="ไปยังส่วน">
-          {SECTIONS.map(([id, label]) => (
+        <nav className="dp-jump" aria-label={tr("ไปยังส่วน", "Jump to section")}>
+          {SECTIONS.map(([id, th, en]) => (
             <button
               type="button"
               key={id}
               onClick={() => panelRef.current?.querySelector(`#${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}
             >
-              {label}
+              {tr(th, en)}
             </button>
           ))}
         </nav>
@@ -296,9 +297,9 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
             `M-${12 - h.monthIndex} ${thaiMonthLabel(h.monthIndex - 12)}`,
             fmtN(h.qty, 0),
           ]),
-          ["รวม 12 เดือน", fmt(item.usageHistory.slice(0, 12).reduce((s, h) => s + h.qty, 0), 0)],
+          [tr("รวม 12 เดือน", "12-month total"), fmt(item.usageHistory.slice(0, 12).reduce((s, h) => s + h.qty, 0), 0)],
           ["AVG/M", fmt(item.avgMonth, 1)],
-          ["Lead Time", `${item.leadTimeDays ?? "—"} วัน`],
+          ["Lead Time", `${item.leadTimeDays ?? "—"} ${tr("วัน", "days")}`],
           ["Min usage", fmt(item.minUsage, 0)],
           ["Max usage", fmt(item.maxUsage, 0)],
           ["New MIN.ST", fmt(item.recommendedMin, 1)],
@@ -347,14 +348,18 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
                   color: "var(--warning)",
                 }}
               >
-                <AlertTriangle size={14} strokeWidth={2} style={{ verticalAlign: "-2px" }} aria-hidden /> รายการนี้ไม่พบในไฟล์ import ล่าสุด — ตัวเลข Stock/คาดการณ์ด้านล่างอาจไม่เป็นปัจจุบัน
+                <AlertTriangle size={14} strokeWidth={2} style={{ verticalAlign: "-2px" }} aria-hidden />{" "}
+                {tr(
+                  "รายการนี้ไม่พบในไฟล์ import ล่าสุด — ตัวเลข Stock/คาดการณ์ด้านล่างอาจไม่เป็นปัจจุบัน",
+                  "This item isn't in the latest import file — the stock and forecast figures below may be out of date"
+                )}
               </div>
             )}
             <div className="detail-chips">
               <span className="chip">
                 <span className="chip-label">Lead</span>
                 <span className="chip-value" style={{ color: "var(--warning)" }}>
-                  {item.leadTimeDays ?? "—"} วัน
+                  {item.leadTimeDays ?? "—"} {tr("วัน", "days")}
                 </span>
               </span>
               <span className="chip">
@@ -380,33 +385,35 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
                 {hasPoDueDates ? (
                   <PoDueDatesList key={item.id} rows={item.poDueDates} />
                 ) : (
-                  <span className="kpi-sub">PO ค้างรับ</span>
+                  <span className="kpi-sub">{tr("PO ค้างรับ", "Open PO")}</span>
                 )}
               </div>
               <div className="kpi">
                 <span className="kpi-label"><Warehouse size={13} strokeWidth={2} aria-hidden /> Stock N0</span>
                 <span className="kpi-value" style={{ color: "var(--accent)" }}>{fmtN(item.stockQty, 0)}</span>
-                <span className="kpi-sub">สต็อกที่สาขาใหญ่</span>
+                <span className="kpi-sub">{tr("สต็อกที่สาขาใหญ่", "Stock at head office")}</span>
               </div>
               <div className="kpi">
                 <span className="kpi-label"><ShoppingBag size={13} strokeWidth={2} aria-hidden /> Sale Order</span>
                 <span className="kpi-value" style={{ color: "var(--warning)" }}>
                   {fmtN(item.backorderQty, 0)}
                 </span>
-                <span className="kpi-sub">ยอดจองค้างส่ง</span>
+                <span className="kpi-sub">{tr("ยอดจองค้างส่ง", "Reserved, not yet shipped")}</span>
               </div>
               <div className="kpi">
                 <span className="kpi-label">
                   <TrendingUp size={13} strokeWidth={2} aria-hidden /> AVG/M
                   {item.avgMonth6 != null && (
-                    <span style={{ color: "var(--accent2)" }} title="ค่าเฉลี่ย 6 เดือน — ใช้คำนวณ NEXT-0..5">
+                    <span style={{ color: "var(--accent2)" }} title={tr("ค่าเฉลี่ย 6 เดือน — ใช้คำนวณ NEXT-0..5", "6-month average — used for NEXT-0..5")}>
                       {" "}
                       · 6M: {fmt(item.avgMonth6, 1)}
                     </span>
                   )}
                 </span>
                 <span className="kpi-value">{fmt(item.avgMonth, 1)}</span>
-                <span className="kpi-sub">Lead Time: {item.leadTimeDays ?? "—"} วัน</span>
+                <span className="kpi-sub">
+                  Lead Time: {item.leadTimeDays ?? "—"} {tr("วัน", "days")}
+                </span>
               </div>
               <div className="kpi">
                 <span className="kpi-label"><Target size={13} strokeWidth={2} aria-hidden /> Sum MIN</span>
@@ -414,7 +421,7 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
                 <span className="kpi-sub">Old MIN: {fmt(item.oldMin, 0)}</span>
               </div>
               <div className="kpi">
-                <span className="kpi-label"><Activity size={13} strokeWidth={2} aria-hidden /> สถานะ</span>
+                <span className="kpi-label"><Activity size={13} strokeWidth={2} aria-hidden /> {tr("สถานะ", "Status")}</span>
                 <span
                   className="kpi-value"
                   style={{
@@ -422,7 +429,7 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
                     fontSize: "0.8125rem",
                   }}
                 >
-                  {STATUS_DASHBOARD[item.calcStatus ?? "OK"]?.label ?? "-"}
+                  {tr(...STATUS_DASHBOARD[item.calcStatus ?? "OK"].label)}
                 </span>
                 <span className="kpi-sub">PR: {item.prQtyCurrent ? fmt(item.prQtyCurrent, 0) : "—"}</span>
               </div>
@@ -431,7 +438,7 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
             <span id="sec-charts" className="dp-anchor" />
             <div className="detail-charts-grid">
               <section className="detail-chart-card">
-                <h3>ยอดขาย 13 เดือน</h3>
+                <h3>{tr("ยอดขาย 13 เดือน", "Sales, 13 months")}</h3>
                 <ResponsiveContainer width="100%" height={160}>
                   <AreaChart data={usageChartData}>
                     <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} />
@@ -460,7 +467,7 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
               </section>
 
               <section className="detail-chart-card">
-                <h3>พยากรณ์ NEXT-0..5 vs SUM MIN</h3>
+                <h3>{tr("พยากรณ์ NEXT-0..5 vs SUM MIN", "Forecast NEXT-0..5 vs SUM MIN")}</h3>
                 <ResponsiveContainer width="100%" height={160}>
                   <BarChart data={forecastChartData}>
                     <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} />
@@ -485,7 +492,7 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
               </section>
 
               <section className="detail-chart-card">
-                <h3>ยอดขายรายปี</h3>
+                <h3>{tr("ยอดขายรายปี", "Yearly sales")}</h3>
                 <ResponsiveContainer width="100%" height={140}>
                   <BarChart data={item.yearlySales.map((y) => ({ year: y.year, qty: y.qty }))}>
                     <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} />
@@ -500,12 +507,12 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
               <section className="detail-chart-card">
                 <h3>NEXT-0→5 vs SUM MIN</h3>
                 <div className="whatif-pr-row">
-                  <label htmlFor="whatif-pr-input">PR qty (ทดลอง)</label>
+                  <label htmlFor="whatif-pr-input">{tr("PR qty (ทดลอง)", "PR qty (what-if)")}</label>
                   <input
                     id="whatif-pr-input"
                     type="number"
                     min={0}
-                    placeholder="พิมพ์จำนวน เช่น 100"
+                    placeholder={tr("พิมพ์จำนวน เช่น 100", "Enter a quantity, e.g. 100")}
                     value={whatIfPr}
                     onChange={(e) => setWhatIfPr(e.target.value)}
                     onFocus={(e) => e.target.select()}
@@ -516,13 +523,19 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
                 </div>
                 <p className="whatif-pr-hint">
                   {whatIfPrQty > 0
-                    ? `ถ้า PR ${fmtN(whatIfPrQty, 0)} หน่วยนี้เข้าจริง จะถึงมือประมาณ Next-${whatIfBucketMonth} (ตาม Lead Time ${item.leadTimeDays ?? "—"} วัน) — ค่า Next-0..5 จริงยังไม่เปลี่ยน จนกว่าจะมี PO ยืนยันจริง`
-                    : "พิมพ์จำนวน PR เพื่อดูตัวอย่างผลกระทบต่อ Next-0..5 (ไม่บันทึกจริง)"}
+                    ? tr(
+                        `ถ้า PR ${fmtN(whatIfPrQty, 0)} หน่วยนี้เข้าจริง จะถึงมือประมาณ Next-${whatIfBucketMonth} (ตาม Lead Time ${item.leadTimeDays ?? "—"} วัน) — ค่า Next-0..5 จริงยังไม่เปลี่ยน จนกว่าจะมี PO ยืนยันจริง`,
+                        `If a PR of ${fmtN(whatIfPrQty, 0)} units really arrives, it lands around Next-${whatIfBucketMonth} (lead time ${item.leadTimeDays ?? "—"} days) — the real Next-0..5 don't change until a PO is confirmed`
+                      )
+                    : tr(
+                        "พิมพ์จำนวน PR เพื่อดูตัวอย่างผลกระทบต่อ Next-0..5 (ไม่บันทึกจริง)",
+                        "Enter a PR quantity to preview its effect on Next-0..5 (nothing is saved)"
+                      )}
                 </p>
                 <div className="next-bar-list">
                   <div className="next-bar-header">
-                    <span>เดือน</span>
-                    <span>Stock คาด</span>
+                    <span>{tr("เดือน", "Month")}</span>
+                    <span>{tr("Stock คาด", "Projected stock")}</span>
                   </div>
                   {a.next.map((val, i) => {
                     const tone = nextCellTone(val, item.sumMin);
@@ -555,37 +568,38 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
             <span id="sec-plan" className="dp-anchor" />
             <section className="plan-card">
               <h3 className="plan-card-title">
-                <ClipboardCheck size={16} strokeWidth={2} aria-hidden /> แผนการสั่งซื้อที่แนะนำ
+                <ClipboardCheck size={16} strokeWidth={2} aria-hidden /> {tr("แผนการสั่งซื้อที่แนะนำ", "Recommended order plan")}
               </h3>
 
               {a.triggerMonth >= 0 ? (
                 <>
                   <div className={`plan-banner tone-${a.urgency.tone}`}>
                     <div>
-                      <div className="plan-banner-label">สถานะ</div>
+                      <div className="plan-banner-label">{tr("สถานะ", "Status")}</div>
                       <div className={`plan-banner-value tone-${a.urgency.tone}`}>{a.urgency.label}</div>
                     </div>
                     <div className="plan-banner-due">
-                      <div className="plan-banner-label">ต้องสั่งภายใน</div>
+                      <div className="plan-banner-label">{tr("ต้องสั่งภายใน", "Order by")}</div>
                       <div className={`plan-banner-value tone-${a.urgency.tone}`}>
                         {a.daysToOrder <= 0
-                          ? "ทันที!"
+                          ? tr("ทันที!", "Now!")
                           : item.mustOrderByDate
-                            ? `${thaiDateShort(new Date(item.mustOrderByDate))} (${a.daysToOrder} วัน)`
+                            ? `${thaiDateShort(new Date(item.mustOrderByDate))} (${a.daysToOrder} ${tr("วัน", "days")})`
                             : "-"}
                       </div>
                     </div>
                   </div>
                   <div className="plan-kpis">
                     <div className="kpi">
-                      <span className="kpi-label">จำนวนที่ควรสั่ง</span>
+                      <span className="kpi-label">{tr("จำนวนที่ควรสั่ง", "Quantity to order")}</span>
                       <span className={`kpi-value tone-${a.urgency.tone}`}>{fmtN(a.recommendedOrderQty, 0)}</span>
                       <span className="kpi-sub">
-                        หน่วย{item.packingRule?.active ? ` (คูณของ ${item.packingRule.multipleOf})` : ""}
+                        {tr("หน่วย", "units")}
+                        {item.packingRule?.active ? tr(` (คูณของ ${item.packingRule.multipleOf})`, ` (multiple of ${item.packingRule.multipleOf})`) : ""}
                       </span>
                     </div>
                     <div className="kpi">
-                      <span className="kpi-label">เดือนที่ Stock ต่ำกว่า MIN</span>
+                      <span className="kpi-label">{tr("เดือนที่ Stock ต่ำกว่า MIN", "Month stock drops below MIN")}</span>
                       <span className="kpi-value tone-danger">
                         {a.triggerMonthLabel}
                       </span>
@@ -594,16 +608,16 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
                       </span>
                     </div>
                     <div className="kpi">
-                      <span className="kpi-label">มูลค่าประมาณ</span>
+                      <span className="kpi-label">{tr("มูลค่าประมาณ", "Estimated value")}</span>
                       <span className="kpi-value tone-warn">
                         {(item.purchasePrice ?? 0) > 0 ? `฿${fmt(a.estimatedValue, 0)}` : "—"}
                       </span>
                       <span className="kpi-sub">
-                        {(item.purchasePrice ?? 0) > 0 ? `@฿${fmt(item.purchasePrice, 2)}/หน่วย` : "ไม่มีราคา"}
+                        {(item.purchasePrice ?? 0) > 0 ? tr(`@฿${fmt(item.purchasePrice, 2)}/หน่วย`, `@฿${fmt(item.purchasePrice, 2)}/unit`) : tr("ไม่มีราคา", "No price")}
                       </span>
                     </div>
                   </div>
-                  <div className="plan-timeline-label">ไทม์ไลน์</div>
+                  <div className="plan-timeline-label">{tr("ไทม์ไลน์", "Timeline")}</div>
                   <div className="plan-timeline">
                     {([0, 1, 2, 3, 4, 5] as const).map((n) => {
                       const isTrigger = n === a.triggerMonth;
@@ -618,15 +632,15 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
                     })}
                   </div>
                   <p className="plan-summary">
-                    <Flag size={13} strokeWidth={2} style={{ verticalAlign: "-2px" }} aria-hidden /> ต้องสั่งวันที่:{" "}
+                    <Flag size={13} strokeWidth={2} style={{ verticalAlign: "-2px" }} aria-hidden /> {tr("ต้องสั่งวันที่:", "Order by:")}{" "}
                     <b className={`tone-${a.urgency.tone}`}>
                       {item.mustOrderByDate ? thaiDateShort(new Date(item.mustOrderByDate)) : "-"}
                     </b>{" "}
-                    | Lead: <b>{item.leadTimeDays ?? "—"} วัน</b> | Stock ต่ำกว่า MIN:{" "}
+                    | Lead: <b>{item.leadTimeDays ?? "—"} {tr("วัน", "days")}</b> | {tr("Stock ต่ำกว่า MIN:", "Below MIN in:")}{" "}
                     <b className="tone-danger">{a.triggerMonthLabel}</b>
                   </p>
                   <div className="plan-reasons">
-                    <h4>เหตุผลที่ควรสั่ง</h4>
+                    <h4>{tr("เหตุผลที่ควรสั่ง", "Why order")}</h4>
                     {planReasons.map((runs, i) => (
                       <div className={`reason-line tone-${a.urgency.tone}`} key={i}>
                         <RichRuns runs={runs} />
@@ -636,13 +650,17 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
                 </>
               ) : (
                 <p className="plan-ok">
-                  <CheckCircle2 size={15} strokeWidth={2} style={{ verticalAlign: "-3px" }} aria-hidden /> สถานะปกติ — ไม่มีความจำเป็นต้องสั่งซื้อในช่วงเดือนนี้ถึง 5 เดือนข้างหน้า
+                  <CheckCircle2 size={15} strokeWidth={2} style={{ verticalAlign: "-3px" }} aria-hidden />{" "}
+                  {tr(
+                    "สถานะปกติ — ไม่มีความจำเป็นต้องสั่งซื้อในช่วงเดือนนี้ถึง 5 เดือนข้างหน้า",
+                    "All good — no need to order this month or in the next 5 months"
+                  )}
                 </p>
               )}
 
               {suggestions.length > 0 && (
                 <div className="suggestion-list">
-                  <h4>ข้อเสนอแนะ</h4>
+                  <h4>{tr("ข้อเสนอแนะ", "Suggestions")}</h4>
                   {suggestions.map((s, i) => (
                     <div className="suggestion-item" key={i}>
                       <span className="suggestion-icon">{s.icon}</span>
@@ -656,7 +674,8 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
             <span id="sec-analysis" className="dp-anchor" />
             <section className="deep-analysis-card">
               <h3>
-                <BrainCircuit size={16} strokeWidth={2} style={{ verticalAlign: "-3px" }} aria-hidden /> วิเคราะห์แนวโน้มและเหตุผลการสั่งซื้อโดยละเอียด
+                <BrainCircuit size={16} strokeWidth={2} style={{ verticalAlign: "-3px" }} aria-hidden />{" "}
+                {tr("วิเคราะห์แนวโน้มและเหตุผลการสั่งซื้อโดยละเอียด", "Detailed trend analysis and ordering rationale")}
               </h3>
               {narrative.map((sec) => (
                 <div className="narrative-section" key={sec.title}>
@@ -692,7 +711,7 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
 
             <span id="sec-fields" className="dp-anchor" />
             <section className="field-grid-section">
-              <h3>ข้อมูลอ้างอิงครบทุกช่อง</h3>
+              <h3>{tr("ข้อมูลอ้างอิงครบทุกช่อง", "All reference fields")}</h3>
               <div className="field-grid">
                 {fields.map(([label, value], i) => (
                   <div className="field-card" key={i}>
@@ -705,14 +724,15 @@ export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; o
 
             <span id="sec-history" className="dp-anchor" />
             <section>
-              <h3>Recent edits</h3>
-              {history && history.length === 0 && <p>No edits recorded yet.</p>}
+              <h3>{tr("ประวัติการแก้ไขล่าสุด", "Recent edits")}</h3>
+              {history && history.length === 0 && <p>{tr("ยังไม่มีการแก้ไข", "No edits recorded yet.")}</p>}
               {history && history.length > 0 && (
                 <ul className="history-list">
                   {history.slice(0, 10).map((entry) => (
                     <li key={entry.id}>
-                      <strong>{entry.changedBy.displayName}</strong> changed {entry.fieldName} from{" "}
-                      {entry.oldValue ?? "-"} to {entry.newValue ?? "-"} — {new Date(entry.changedAt).toLocaleString()}
+                      <strong>{entry.changedBy.displayName}</strong> {tr("แก้", "changed")} {entry.fieldName} {tr("จาก", "from")}{" "}
+                      {entry.oldValue ?? "-"} {tr("เป็น", "to")} {entry.newValue ?? "-"} —{" "}
+                      {new Date(entry.changedAt).toLocaleString(dateLocale())}
                     </li>
                   ))}
                 </ul>

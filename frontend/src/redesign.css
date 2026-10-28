@@ -845,3 +845,13 @@ button[type="button"].icon-btn.side-garden-toggle.on { color: var(--success); }
 @keyframes sg-sleigh { 0% { transform: translate(230px, 20px); } 60% { transform: translate(-80px, -30px); } 100% { transform: translate(-80px, -30px); } }
 @keyframes sg-stream { to { stroke-dashoffset: -10; } }
 @keyframes sg-drop { 0% { transform: translate(0, 0); opacity: 1; } 100% { transform: translate(-5px, 8px); opacity: 0; } }
+
+/* TH/EN language switch: a small segmented pill above the theme select. Collapsed rail shows
+   only the active language; clicking it flips to the other one. */
+.side-lang { display: flex; gap: 2px; padding: 2px; margin: 0 0.35rem; border: 1px solid var(--border); border-radius: 999px; background: var(--card); }
+button[type="button"].side-lang-btn { flex: 1; padding: 0.2rem 0; border: 0; border-radius: 999px; background: transparent; color: var(--text-muted2); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; }
+button[type="button"].side-lang-btn:hover:not(:disabled) { color: var(--text); }
+button[type="button"].side-lang-btn.on { background: var(--accent); color: var(--bg); }
+button[type="button"].side-lang-btn.on:hover:not(:disabled) { color: var(--bg); }
+.nav-collapsed .side-lang { margin: 0 auto; width: 36px; }
+.nav-collapsed .side-lang-btn:not(.on) { display: none; }

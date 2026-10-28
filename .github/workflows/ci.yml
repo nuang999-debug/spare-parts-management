@@ -1,0 +1,48 @@
+name: CI
+
+# Type-checks, lints and builds in the cloud, so changes can be verified without running
+# Node.js on a developer PC. Errors show up as annotations on the run.
+on:
+  push:
+    branches: [preview, main]
+  pull_request:
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - name: Type-check
+        run: npx tsc -b --pretty false
+      - name: Lint
+        run: npx oxlint src
+      - name: Build
+        run: npx vite build
+
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npx prisma generate
+      - name: Type-check
+        run: npx tsc --noEmit --pretty false
+      - name: Tests
+        run: npx vitest run
