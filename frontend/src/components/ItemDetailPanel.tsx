@@ -35,7 +35,7 @@ import {
   X,
 } from "lucide-react";
 import { StatusBadge } from "./StatusBadge";
-import { dateLocale, tr } from "../lib/i18n";
+import { dateLocale, tr, useLang } from "../lib/i18n";
 
 const SECTIONS: Array<[string, string, string]> = [
   ["sec-overview", "ภาพรวม", "Overview"],
@@ -155,6 +155,7 @@ const MIN_WIDTH = 40;
 const MAX_WIDTH = 900;
 
 export default function ItemDetailPanel({ itemId, onClose }: { itemId: number; onClose: () => void }) {
+  useLang();
   const [collapsed, setCollapsed] = useState(false);
   // Up to 40% of the window, so on a small screen the table keeps room for its frozen columns.
   const [width, setWidth] = useState(() => Math.min(DEFAULT_WIDTH, Math.round(window.innerWidth * 0.4)));

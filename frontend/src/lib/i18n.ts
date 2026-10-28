@@ -5,8 +5,8 @@ import { useSyncExternalStore } from "react";
 
    `tr(th, en)` reads a module-level current language so it also works in plain functions
    (column headers, narrative builders, label helpers). Components that render translated text
-   must re-render when the language changes: AppShell subscribes via `useLang()`, and since every
-   page renders under it, the whole tree re-renders on a switch. Anything memoised (useMemo,
+   must re-render when the language changes, so each one calls `useLang()` — a re-render of
+   AppShell does not reach pages behind the router <Outlet>. Anything memoised (useMemo,
    table column defs) must either call `tr` at render time or include the language in its deps. */
 
 export type Lang = "th" | "en";

@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { BarChart3, Printer, Table2 } from "lucide-react";
 import ItemsTable from "./ItemsTable";
-import { tr } from "../lib/i18n";
+import { tr, useLang } from "../lib/i18n";
 import SummaryTab from "./SummaryTab";
 
 export default function PlanningPage() {
+  // Router outlets don't re-render with AppShell, so each page subscribes itself.
+  useLang();
   const [tab, setTab] = useState<"plan" | "sum">("plan");
   // Mirrors the original's goToPlanItem(): clicking a part in the Summary tab switches to the
   // Planning tab and opens that item's detail panel there — set here, consumed and cleared by

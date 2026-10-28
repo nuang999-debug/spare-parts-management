@@ -1,5 +1,5 @@
 import type { CalcStatus, CalcTrend } from "../api/items";
-import { tr } from "../lib/i18n";
+import { tr, useLang } from "../lib/i18n";
 
 const STATUS_LABEL: Record<CalcStatus, [string, string]> = {
   OK: ["ปกติ", "OK"],
@@ -13,6 +13,7 @@ const STATUS_CLASS: Record<CalcStatus, string> = {
 };
 
 export function StatusBadge({ status }: { status: CalcStatus | null }) {
+  useLang();
   if (!status) return <span className="badge badge-muted">-</span>;
   return <span className={STATUS_CLASS[status]}>{tr(...STATUS_LABEL[status])}</span>;
 }
